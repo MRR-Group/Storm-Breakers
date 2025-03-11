@@ -56,7 +56,7 @@ namespace StormBreakers
             //GenerateHull();
 
             // getting the render component
-            MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
+            var meshRenderer = GetComponent<MeshRenderer>();
 
             // checking if the hull builder helper is attached
             if (meshRenderer.material != null && meshRenderer.material.HasFloat("_nx") && meshRenderer.material.HasFloat("_ny") && meshRenderer.material.HasFloat("_maxVisibleDistance"))
@@ -70,7 +70,7 @@ namespace StormBreakers
         public Mesh GenerateHull() // generate a mesh according to the inputs
         {
             // creating a mesh
-            Mesh mesh = new Mesh();
+            var mesh = new Mesh();
 
             // calculating the number of vertices on a lateral face, value used many times
             nv = (horizontalNumberOfDivision+1)*(verticalNumberOfDivision+1);
@@ -78,21 +78,21 @@ namespace StormBreakers
             // vertices temporary constructions
             {
                 // contains 2 face of nv vertices, plus the center line of nx vertices
-                Vector3[] V = new Vector3[2*nv + horizontalNumberOfDivision+1];
+                var V = new Vector3[2*nv + horizontalNumberOfDivision+1];
 
                 // longitudinal looping
-                for (int X = 0; X <= horizontalNumberOfDivision; X++)
+                for (var X = 0; X <= horizontalNumberOfDivision; X++)
                 {
                     // vertical looping
-                    for (int Y = 0; Y <= verticalNumberOfDivision; Y++)
+                    for (var Y = 0; Y <= verticalNumberOfDivision; Y++)
                     {
                         //calculating the indice
-                        int i = X + (horizontalNumberOfDivision+1)*Y;
+                        var i = X + (horizontalNumberOfDivision+1)*Y;
 
                         // calculating x position
-                        float x = (float)X/(float)horizontalNumberOfDivision*length- length/2f;
+                        var x = (float)X/(float)horizontalNumberOfDivision*length- length/2f;
                         //calculating y position
-                        float y = -(float)Y/(float)verticalNumberOfDivision*depth;
+                        var y = -(float)Y/(float)verticalNumberOfDivision*depth;
 
                         // setting the vertice in the starbord face
                         V[i] = new Vector3(x, y, -depth*0.5f);
@@ -103,12 +103,12 @@ namespace StormBreakers
                     // center line of the decking
                     {
                         // calculating the indice
-                        int i = 2*nv + X;
+                        var i = 2*nv + X;
 
                         // calculating x position
-                        float x = (float)X/(float)horizontalNumberOfDivision*length- length/2f;
+                        var x = (float)X/(float)horizontalNumberOfDivision*length- length/2f;
                         //calculating y position
-                        float y = 0f;
+                        var y = 0f;
 
                         // setting the vertice
                         V[i] = new Vector3(x, y, 0f);
@@ -123,19 +123,19 @@ namespace StormBreakers
                 // plus the decking that contains 2.nx squares with 2*3 points each
                 // minus the 2 triangles (6 points) of the deck bow that would be 0 area
                 // plus the transom that contains 2.ny triangle of 3 points each 
-                int[] T = new int[2*2*3*horizontalNumberOfDivision*verticalNumberOfDivision + 2*horizontalNumberOfDivision*2*3 - 6 + 2*verticalNumberOfDivision*3];
+                var T = new int[2*2*3*horizontalNumberOfDivision*verticalNumberOfDivision + 2*horizontalNumberOfDivision*2*3 - 6 + 2*verticalNumberOfDivision*3];
 
                 // the index k in the array will be incremented blindly
-                int k = 0;
+                var k = 0;
 
                 // looping trough the side vertices, first horizontally
-                for (int X = 0; X < horizontalNumberOfDivision; X++)
+                for (var X = 0; X < horizontalNumberOfDivision; X++)
                 {
                     // then vertical looping
-                    for (int Y = 0; Y < verticalNumberOfDivision; Y++)
+                    for (var Y = 0; Y < verticalNumberOfDivision; Y++)
                     {
                         // calculating the indice of the botom left corner
-                        int i = X + (horizontalNumberOfDivision+1)*Y;
+                        var i = X + (horizontalNumberOfDivision+1)*Y;
 
                         //first starbord triangle
                         T[k++] = i; T[k++] = i+1; T[k++] = i+1 + horizontalNumberOfDivision+1;
@@ -168,7 +168,7 @@ namespace StormBreakers
                 }
 
                 // building the transom
-                for (int Y = 0; Y < verticalNumberOfDivision; Y++)
+                for (var Y = 0; Y < verticalNumberOfDivision; Y++)
                 {
                     // setting the transom starbord triangle
                     T[k++] = 2*nv; T[k++] =  Y*(horizontalNumberOfDivision+1); T[k++] = (Y+1)*(horizontalNumberOfDivision+1);
@@ -182,23 +182,23 @@ namespace StormBreakers
             // uv constructions
             {
                 // the second UV are used to shape the hull according the the input curves
-                Vector2[] UV2 = new Vector2[mesh.vertices.Length];
+                var UV2 = new Vector2[mesh.vertices.Length];
                 // the third UV are used to differentiate the portside (U3=1f) to starbord (U3=-1f) and the center line (U3=0)
-                Vector2[] UV3 = new Vector2[mesh.vertices.Length];
+                var UV3 = new Vector2[mesh.vertices.Length];
 
                 // looping trough the side vertices, first horizontally
-                for (int X = 0; X <= horizontalNumberOfDivision; X++)
+                for (var X = 0; X <= horizontalNumberOfDivision; X++)
                 {
                     // then vertically
-                    for (int Y = 0; Y <= verticalNumberOfDivision; Y++)
+                    for (var Y = 0; Y <= verticalNumberOfDivision; Y++)
                     {
                         //calculating the indice of the current vertex with the same formula already used
-                        int i = X + (horizontalNumberOfDivision+1)*Y;
+                        var i = X + (horizontalNumberOfDivision+1)*Y;
 
                         // calculating u2 (is -1 at the aft, 0 in the center, and 1 at the bow
-                        float u2 = (float)X/horizontalNumberOfDivision*2 - 1;
+                        var u2 = (float)X/horizontalNumberOfDivision*2 - 1;
                         // calculating v2 (is 0 on the deck, 1 on the keel)
-                        float v2 = (float)Y/verticalNumberOfDivision;
+                        var v2 = (float)Y/verticalNumberOfDivision;
 
                         // setting the uv to starbord
                         UV2[i] = new Vector2(u2, v2);
@@ -210,10 +210,10 @@ namespace StormBreakers
                     // setting the uv to the center line
                     {
                         // calculating the indice
-                        int i = 2*nv + X;
+                        var i = 2*nv + X;
 
                         // calculating U2 position
-                        float u2 = (float)X/horizontalNumberOfDivision*2 - 1;
+                        var u2 = (float)X/horizontalNumberOfDivision*2 - 1;
 
                         // setting the uvs
                         UV2[i] =  new Vector2(u2, 0f);
@@ -232,15 +232,15 @@ namespace StormBreakers
                 var UV3 = mesh.uv2;
 
                 // looping through all the vertices
-                for (int i = 0; i < mesh.vertices.Length; i++)
+                for (var i = 0; i < mesh.vertices.Length; i++)
                 {
                     // easing the writing
-                    float u = UV2[i].x;
-                    float v = UV2[i].y;
-                    float u2 = UV3[i].x;
+                    var u = UV2[i].x;
+                    var v = UV2[i].y;
+                    var u2 = UV3[i].x;
 
                     // calculating Y with the depth curve (vertical)
-                    float Y = depth*v*depthCurve.Evaluate(u);
+                    var Y = depth*v*depthCurve.Evaluate(u);
 
                     //calculating X with the racking curves (longitudinal)
                     float X;
@@ -257,16 +257,16 @@ namespace StormBreakers
 
 
                     // evaluating the 3 cross section at v
-                    float Zbow = bowCrossSection.Evaluate(v); //at u=0.75
-                    float Zcenter = centerCrossSection.Evaluate(v); // at u=0
-                    float Zaft = aftCrossSection.Evaluate(v); //at u=-1
+                    var Zbow = bowCrossSection.Evaluate(v); //at u=0.75
+                    var Zcenter = centerCrossSection.Evaluate(v); // at u=0
+                    var Zaft = aftCrossSection.Evaluate(v); //at u=-1
 
                     // creating an animation curve over u with the 3 cross section and with the sharp bow
-                    AnimationCurve beamCurve = new AnimationCurve(new Keyframe(-1f, Zaft), new Keyframe(0f, Zcenter), new Keyframe(0.75f, Zbow), new Keyframe(1f, 0f));
+                    var beamCurve = new AnimationCurve(new Keyframe(-1f, Zaft), new Keyframe(0f, Zcenter), new Keyframe(0.75f, Zbow), new Keyframe(1f, 0f));
                     beamCurve.SmoothTangents(1, 0f); beamCurve.SmoothTangents(2, 0f);
 
                     // calculating Z (width) by making an interporaltion of the 3 cross section
-                    float Z = u2*0.5f*beam*beamCurve.Evaluate(u);
+                    var Z = u2*0.5f*beam*beamCurve.Evaluate(u);
 
                     //nesting the resuts and transforming
                     V[i] = bowPosition - Vector3.right*0.5f*length + new Vector3(X, Y, Z);
@@ -292,7 +292,7 @@ namespace StormBreakers
             // getting the mesh filter component
             if (this != null)
             {
-                MeshFilter meshFilter = GetComponent<MeshFilter>();
+                var meshFilter = GetComponent<MeshFilter>();
 
                 // if there is actually a mesh filter attached, then it is updated
                 if (meshFilter != null)
@@ -301,13 +301,13 @@ namespace StormBreakers
                     meshFilter.sharedMesh =  GenerateHull();
 
                     // getting the render component
-                    MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
+                    var meshRenderer = GetComponent<MeshRenderer>();
 
                     // if there is actually a mesh renderer then it is updated
                     if (meshRenderer != null)
                     {
                         // getting the material
-                        Material material = meshRenderer.sharedMaterial;
+                        var material = meshRenderer.sharedMaterial;
 
                         // if the material is the hull builder helper then it is updated
                         if (material != null && material.HasFloat("_nx") && material.HasFloat("_ny") && material.HasFloat("_maxVisibleDistance"))

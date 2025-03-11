@@ -55,29 +55,29 @@ namespace StormBreakers
             // --------- populating the array --------------
 
             // running through each wave system
-            for (int w = 0; w < 4; w++)
+            for (var w = 0; w < 4; w++)
             {
                 // first, calculating the losange grid coordinate of the origin :
 
                 // calculating the system position
-                float groupPosition = -Time.time*Ocean.groupSpeed[w];
+                var groupPosition = -Time.time*Ocean.groupSpeed[w];
 
                 // the origin is computed by projecting on the losange grid axis
-                float origini = Vector3.Dot((transform.position-Ocean.directionVector[w]*groupPosition), Ocean.iVector[w]);
-                float originj = Vector3.Dot((transform.position-Ocean.directionVector[w]*groupPosition), Ocean.jVector[w]);
+                var origini = Vector3.Dot((transform.position-Ocean.directionVector[w]*groupPosition), Ocean.iVector[w]);
+                var originj = Vector3.Dot((transform.position-Ocean.directionVector[w]*groupPosition), Ocean.jVector[w]);
 
                 // the losange grid coordinate of the origin is set to the nearest half integer 
                 origini = Mathf.Floor(origini) + 0.5f;
                 originj = Mathf.Floor(originj) + 0.5f;
 
                 // initializing the index that will define which emitter it is, it should not go outside bounds but no check is done
-                int e = 0;
+                var e = 0;
 
                 // running through i axis
-                for (float i = -1f; i <= 1f; i+=1f)
+                for (var i = -1f; i <= 1f; i+=1f)
                 {
                     // running trough j axis
-                    for (float j = -1f; j <= 1f; j+=1f)
+                    for (var j = -1f; j <= 1f; j+=1f)
                     {
                         // setting the losange grid coordinate of the losange that the groups lies in
                         losangei[w, e] = origini+i;
@@ -96,7 +96,7 @@ namespace StormBreakers
         void Start()
         {
             // checking the prescence of an audio source
-            AudioSource audioSource = GetComponent<AudioSource>();
+            var audioSource = GetComponent<AudioSource>();
 
             // if there is not then this component is disabled
             if (audioSource == null) { Debug.LogWarning("Please attach an audio source to the ocean."); this.enabled = false; return; }
@@ -105,26 +105,26 @@ namespace StormBreakers
         private void Update()
         {
             // running through each wave system
-            for (int w = 0; w < 4; w++)
+            for (var w = 0; w < 4; w++)
             {
                 // the system position is common for all the emitter so it can be computed before
-                float systemPosition = -Time.time*Ocean.groupSpeed[w];
+                var systemPosition = -Time.time*Ocean.groupSpeed[w];
 
                 // gettting the ij component of the origin (position of the camera)
-                float origini = Vector3.Dot((Camera.main.transform.position-Ocean.directionVector[w]*systemPosition), Ocean.iVector[w]);
-                float originj = Vector3.Dot((Camera.main.transform.position-Ocean.directionVector[w]*systemPosition), Ocean.jVector[w]);
+                var origini = Vector3.Dot((Camera.main.transform.position-Ocean.directionVector[w]*systemPosition), Ocean.iVector[w]);
+                var originj = Vector3.Dot((Camera.main.transform.position-Ocean.directionVector[w]*systemPosition), Ocean.jVector[w]);
 
                 // running through each emitter in the wave system
-                for (int e = 0; e < 9; e++)
+                for (var e = 0; e < 9; e++)
                 {
                     // ---------- checking the bounds --------------
 
                     // calclulating the relative position in the losange grid
-                    float relativei = losangei[w, e] - origini;
-                    float relativej = losangej[w, e] - originj;
+                    var relativei = losangei[w, e] - origini;
+                    var relativej = losangej[w, e] - originj;
 
                     // making the checks in ij coordinate and updating the ij coordinate accordingly
-                    bool isUpdated = false;
+                    var isUpdated = false;
                     if (relativei >  2f) { losangei[w, e] -= 3f; isUpdated = true; }
                     if (relativei <=-1f) { losangei[w, e] += 3f; isUpdated = true; }
                     if (relativej >= 1f) { losangej[w, e] -= 3f; isUpdated = true; }
@@ -140,34 +140,34 @@ namespace StormBreakers
                     // while the emitters ij coordinate must be continously checked, the following steps can be discarded when there are no wave breaking
                     if (Ocean.areBreakers)
                     {
-                        // calculating the world space position of the emmitter by multiplying ij component to i and j vector and their scale (n.L)² and adding the group position
-                        float scaleij = Ocean.setNumber[w]*Ocean.wavelength[w];
-                        Vector3 emitterPosition = scaleij*scaleij*(groupi[w, e]*Ocean.iVector[w] + groupj[w, e]*Ocean.jVector[w]) + systemPosition*Ocean.directionVector[w];
+                        // calculating the world space position of the emmitter by multiplying ij component to i and j vector and their scale (n.L)ï¿½ and adding the group position
+                        var scaleij = Ocean.setNumber[w]*Ocean.wavelength[w];
+                        var emitterPosition = scaleij*scaleij*(groupi[w, e]*Ocean.iVector[w] + groupj[w, e]*Ocean.jVector[w]) + systemPosition*Ocean.directionVector[w];
 
                         // calculating the group amplitude variation over time
-                        float amplitudeVariation = 0.8f + 0.2f*Mathf.Cos(amplitudeUnphasing[w, e] + 0.1f*Ocean.pulsation[w]*Time.time);
+                        var amplitudeVariation = 0.8f + 0.2f*Mathf.Cos(amplitudeUnphasing[w, e] + 0.1f*Ocean.pulsation[w]*Time.time);
 
                         // calculating the phase
-                        float phase = Vector3.Dot(emitterPosition, Ocean.directionVector[w])*Ocean.wavenumber[w] + Time.time*Ocean.pulsation[w] + unphasing[w, e] + amplitudeVariation*this.amplitude[w, e];
+                        var phase = Vector3.Dot(emitterPosition, Ocean.directionVector[w])*Ocean.wavenumber[w] + Time.time*Ocean.pulsation[w] + unphasing[w, e] + amplitudeVariation*this.amplitude[w, e];
 
                         // calculating the amplitude, is saved in case there is a terrain that modifies it
-                        float totalAmplitude = amplitudeVariation*amplitude[w, e];
+                        var totalAmplitude = amplitudeVariation*amplitude[w, e];
 
                         // calculating the compression
-                        float compression = totalAmplitude*Mathf.Cos(phase -1.2f);
+                        var compression = totalAmplitude*Mathf.Cos(phase -1.2f);
 
                         // calculating the excess compression due to the breaking on the shore line
                         if (Ocean.useTerrain)
                         {
                             // getting the ground depth
-                            float groundDepth = -Ocean.terrain.SampleHeight(emitterPosition) - Ocean.terrain.transform.position.y;
+                            var groundDepth = -Ocean.terrain.SampleHeight(emitterPosition) - Ocean.terrain.transform.position.y;
 
                             // getting shallow water amplitude
-                            float shallowWaterWaveHeight = 0.5f*groundDepth;
+                            var shallowWaterWaveHeight = 0.5f*groundDepth;
 
                             //deducing the clamping factor 
                             // When under 1 the wave are reduced so they break, at 1 they are in deep water, when 0 the wave are under the terrain
-                            float clampingFactor = shallowWaterWaveHeight/(0.085f*Ocean.wavelength[w]);
+                            var clampingFactor = shallowWaterWaveHeight/(0.085f*Ocean.wavelength[w]);
 
                             // clamping the factor to [0-1]
                             if (clampingFactor > 1f) { clampingFactor = 1f; }
@@ -186,18 +186,18 @@ namespace StormBreakers
                             emitterPosition += (-0.1f*totalAmplitude  - 0.12f*Mathf.Sin(phase))*Ocean.directionVector[w]*Ocean.wavelength[w] + 0.085f*Vector3.up*totalAmplitude*Ocean.wavelength[w];
 
                             // computing the distance once as it it served several time
-                            float invSqrDistance = 1f/Vector3.SqrMagnitude(emitterPosition - Camera.main.transform.position);
-                            float invDistance = Mathf.Min(1f, Mathf.Sqrt(invSqrDistance));
-                            float invDistanceClamped = Mathf.Min(1f/Ocean.wavelength[w], invDistance);
+                            var invSqrDistance = 1f/Vector3.SqrMagnitude(emitterPosition - Camera.main.transform.position);
+                            var invDistance = Mathf.Min(1f, Mathf.Sqrt(invSqrDistance));
+                            var invDistanceClamped = Mathf.Min(1f/Ocean.wavelength[w], invDistance);
 
                             // the normalized direction vector
-                            Vector3 emitterDirection = (emitterPosition - Camera.main.transform.position)*invDistance;
+                            var emitterDirection = (emitterPosition - Camera.main.transform.position)*invDistance;
 
                             // setting the pan intensity
-                            float pan = Vector3.Dot(Camera.main.transform.right, emitterDirection);
+                            var pan = Vector3.Dot(Camera.main.transform.right, emitterDirection);
 
                             // setting the fadeoff caused by the orientation of the wave
-                            float orientationFadeoff = 0.8f + Vector3.Dot(Ocean.directionVector[w], emitterDirection)*0.2f;
+                            var orientationFadeoff = 0.8f + Vector3.Dot(Ocean.directionVector[w], emitterDirection)*0.2f;
 
                             // setting the noise volume function of the compression excess and the direction
                             volume[w, e] =  compression*Ocean.setNumber[w]*Ocean.wavelength[w]*Ocean.wavelength[w]*volumeFactor*orientationFadeoff*invDistanceClamped;
@@ -235,14 +235,14 @@ namespace StormBreakers
         private void UpdateGroupData(int w, int e) // this function update the constants in a group of wave
         {
             // renaming i and j for easiness of reading
-            float i = losangei[w, e];
-            float j = losangej[w, e];
+            var i = losangei[w, e];
+            var j = losangej[w, e];
 
             // random function and ij center variation
-            float randomimjm = Mathf.Cos(33f*i+53f*j)*Mathf.Cos(20f*i+48f*j);
-            float deltai = Ocean.randomization[w]*randomimjm;
-            float randomjmim = Mathf.Cos(33f*j+53f*i)*Mathf.Cos(20f*j+48f*i);
-            float deltaj = Ocean.randomization[w]*randomjmim;
+            var randomimjm = Mathf.Cos(33f*i+53f*j)*Mathf.Cos(20f*i+48f*j);
+            var deltai = Ocean.randomization[w]*randomimjm;
+            var randomjmim = Mathf.Cos(33f*j+53f*i)*Mathf.Cos(20f*j+48f*i);
+            var deltaj = Ocean.randomization[w]*randomjmim;
 
             // deducing the ij coordinate of the center of the group
             groupi[w, e] = i + deltai;
@@ -259,32 +259,32 @@ namespace StormBreakers
         void OnAudioFilterRead(float[] data, int channels) // procedural audio is generated here
         {
             // looping through each sample
-            for (int s = 0; s < data.Length; s += channels)
+            for (var s = 0; s < data.Length; s += channels)
             {
                 // initializing the total sample that is the sum of each wave sample
-                float leftTotalValue = 0f;
-                float rightTotalValue = 0f;
+                var leftTotalValue = 0f;
+                var rightTotalValue = 0f;
 
                 // looping through each wave system
-                for (int w = 0; w < 4; w++)
+                for (var w = 0; w < 4; w++)
                 {
                     // looping through each emitter
-                    for (int e = 0; e < 9; e++)
+                    for (var e = 0; e < 9; e++)
                     {
                         // checking if the emitter is breaking for optimization
                         if (volume[w, e] != 0f)
                         {
                             // setting the new random value
-                            float newValue = (float)rand.NextDouble()*2f - 1f; ;
+                            var newValue = (float)rand.NextDouble()*2f - 1f; ;
 
                             // fadeoff low pass filter
-                            float fadeoffValue = fadeOff[w, e]*newValue + (1f-fadeOff[w, e])*fadeoffLastFilteredData[w, e];
+                            var fadeoffValue = fadeOff[w, e]*newValue + (1f-fadeOff[w, e])*fadeoffLastFilteredData[w, e];
 
                             // saving the last filtered data for next sample
                             fadeoffLastFilteredData[w, e] = fadeoffValue;
 
                             // roar low pass filter 
-                            float roarValue = pitchFactor*fadeoffValue + (1f-pitchFactor)*roarLastFilteredData[w, e];
+                            var roarValue = pitchFactor*fadeoffValue + (1f-pitchFactor)*roarLastFilteredData[w, e];
 
                             // saving the last filtered data for next sample
                             roarLastFilteredData[w, e] = roarValue;
@@ -299,7 +299,7 @@ namespace StormBreakers
                 // setting the sample to the audio stream :
 
                 // looping through each channel
-                for (int c = 0; c < channels; c++)
+                for (var c = 0; c < channels; c++)
                 {
                     if (c == 0) // chanel left
                     {

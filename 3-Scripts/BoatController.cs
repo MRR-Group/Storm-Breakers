@@ -211,14 +211,14 @@ namespace StormBreakers
             // ----------- physics --------------
             #region
             // getting the ground depth
-            float groundDepth = 200f;
+            var groundDepth = 200f;
             if (Ocean.useTerrain)
             {
                 groundDepth = -Ocean.terrain.SampleHeight(undeformedPosition) - Ocean.terrain.transform.position.y;
             }
 
             // getting roughly the water height
-            float oceanHeight = Ocean.GetHeight(Time.time, transform.position, ref undeformedPosition, out Vector3 deformation, groundDepth, false);
+            var oceanHeight = Ocean.GetHeight(Time.time, transform.position, ref undeformedPosition, out var deformation, groundDepth, false);
 
             // calculating the depth of the controller
             depth = oceanHeight - transform.position.y;
@@ -245,7 +245,7 @@ namespace StormBreakers
                 // ----------- swirls ----------------
                 #region
                 // computing the swrils lifetime function of propeller activity
-                float lifetime = propellerUsage*swirlLifetime;
+                var lifetime = propellerUsage*swirlLifetime;
                 // taking absolute
                 if (lifetime < 0f) { lifetime *= -1f; }
 
@@ -256,8 +256,8 @@ namespace StormBreakers
                 if (lifetime > 0f)
                 {
                     // the particles generation is function of the velocity, the faster it goes the more particles are to be created to avoid having them separated
-                    Vector3 relativeVelocity = waterVelocity - rb.GetPointVelocity(transform.position);
-                    float relativeSpeed = relativeVelocity.magnitude;
+                    var relativeVelocity = waterVelocity - rb.GetPointVelocity(transform.position);
+                    var relativeSpeed = relativeVelocity.magnitude;
 
                     // to avoid division by 0 when the controller is not moving, the speed is clamped to the value that would generate particles every quarter lifetime
                     relativeSpeed = Mathf.Max(swirlDistanceRate/lifetime*4f, relativeSpeed);
@@ -310,11 +310,11 @@ namespace StormBreakers
             if (audioSource != null)
             {
                 // calculating how close from the surface and clamping (depth is already positive)
-                float nearSurface = 1f - depth*depthForceFactor;
+                var nearSurface = 1f - depth*depthForceFactor;
                 if (nearSurface < 0f) { nearSurface = 0f; }
 
                 // setting the audio volume and pitch according to the absolute of propeller usage
-                float absPropellerUsage = Mathf.Abs(propellerUsage);
+                var absPropellerUsage = Mathf.Abs(propellerUsage);
                 audioSource.volume = Mathf.Lerp(idleVolume, fullThrottleVolume, absPropellerUsage);
                 audioSource.pitch =  Mathf.Lerp(idlePitch, fullThrottlePitch, absPropellerUsage) + absPropellerUsage*nearSurface*unloadedAdditionalPitch;
             }
@@ -365,13 +365,13 @@ namespace StormBreakers
                 Gizmos.color = Color.red;
 
                 // simplifying the code
-                Vector3 from = transform.position;
+                var from = transform.position;
 
                 // drawing current force in play mode
                 if (Application.isPlaying)
                 {
                     // drawing the propeler force vector
-                    Vector3 toward = transform.right*propellerUsage*propellerForce*vectorSize;
+                    var toward = transform.right*propellerUsage*propellerForce*vectorSize;
                     Gizmos.DrawLine(from, from + toward);
 
                     // drawing the rudder force
@@ -382,7 +382,7 @@ namespace StormBreakers
                 else
                 {
                     // drawing the propeler force vector
-                    Vector3 toward = transform.right*propellerForce*vectorSize;
+                    var toward = transform.right*propellerForce*vectorSize;
                     Gizmos.DrawLine(from, from + toward);
 
                     // drawing the rudder force

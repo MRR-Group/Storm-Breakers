@@ -110,7 +110,7 @@ namespace StormBreakers
             // -------------- wind ---------------
             #region
             // getting the mesh render and checking if null
-            MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
+            var meshRenderer = GetComponent<MeshRenderer>();
             if (this != null && meshRenderer == null)
             {
                 Debug.LogError("Please attach a mesh renderer with ocean.mat along with ocean controller.");
@@ -178,13 +178,13 @@ namespace StormBreakers
             // -----------  total light ---------------
             #region
             // getting all the directional light to find the main light
-            Light[] lights = GameObject.FindObjectsOfType<Light>();
+            var lights = GameObject.FindObjectsOfType<Light>();
 
             if (lights != null)
             {
                 // finding the maximal intensity and saving its reference object 
-                float maxIntensity = 0f;
-                foreach (Light light in lights)
+                var maxIntensity = 0f;
+                foreach (var light in lights)
                 {
                     if (light.intensity > maxIntensity)
                     {
@@ -251,7 +251,7 @@ namespace StormBreakers
             // -------- positioning the mesh --------------
             // folowing the main camera in game mode
             if (Camera.main == null) { Debug.LogError("Please set the tag 'main camera' to a camera in the scene."); }
-            Camera camera = Camera.main;
+            var camera = Camera.main;
 
 #if UNITY_EDITOR
             // folowing the editor camera in edit mode if it exist, using game camera otherwise
@@ -276,7 +276,7 @@ namespace StormBreakers
             }
 #endif
             // computing the new position
-            Vector3 newPosition = new Vector3(camera.transform.position.x, 0f, camera.transform.position.z);
+            var newPosition = new Vector3(camera.transform.position.x, 0f, camera.transform.position.z);
 
             // adding some distance in front of the camera, is not excalty the camera focus. This distance is dependant of the scale of the ocean
             newPosition += Vector3.Scale(transform.localScale, oceanObjectDisplacementWithCameraAngle*Vector3.ProjectOnPlane(camera.transform.forward, Vector3.up));
@@ -327,7 +327,7 @@ namespace StormBreakers
             Ocean.surfaceIntensity = 0f;
 
             // running through each wave system, Ocean intensity should have been initialized by the ripples intensity
-            for (int w = 0; w<4; w++)
+            for (var w = 0; w<4; w++)
             {
                 // checking the current wave intensity against the saved value to search the maximum 
                 if (Ocean.intensity[w] > Ocean.surfaceIntensity)
@@ -401,7 +401,7 @@ namespace StormBreakers
             Ocean.sharedMaterial.SetFloat("_ripplesDirection", Ocean.Wind.direction);
 
             // setting the ripples intensity function of the wind strenght, is maximal as soon the wind reachs 36km/h
-            float ripplesIntensity = Mathf.Min(1f, Ocean.Wind.speed*0.1f);
+            var ripplesIntensity = Mathf.Min(1f, Ocean.Wind.speed*0.1f);
             Ocean.sharedMaterial.SetFloat("_ripplesIntensity", ripplesIntensity);
 
             // saving the ripple intensity so when the wave are updated we now which has the maximal intensity
@@ -428,7 +428,7 @@ namespace StormBreakers
             // ---------- statics ------------
             #region
             // ambient light initialized to fallback value
-            Color ambientColor = Color.gray;
+            var ambientColor = Color.gray;
 
             // checking the render ambient mode, since getting the color from the skybox doesn't seem to work, it is required to use color or gradient mode
             if (SceneManager.GetActiveScene().name != "" && RenderSettings.ambientMode == UnityEngine.Rendering.AmbientMode.Skybox)
@@ -441,7 +441,7 @@ namespace StormBreakers
             }
 
             // directional light initialized to fallback value
-            Color mainLightColor = Color.black;
+            var mainLightColor = Color.black;
 
             if (mainLight != null)
             {
@@ -449,7 +449,7 @@ namespace StormBreakers
             }
 
             // making the sum of ambient and directional light (approx), can be above pure white
-            Color totalLight = RenderSettings.ambientIntensity*ambientColor + mainLightColor*0.5f;
+            var totalLight = RenderSettings.ambientIntensity*ambientColor + mainLightColor*0.5f;
 
             // unsaturating 
             //totalLight = particleLightingFactor * new Color(Mathf.Atan(totalLight.r), Mathf.Atan(totalLight.g), Mathf.Atan(totalLight.b));
@@ -485,7 +485,7 @@ namespace StormBreakers
             //if (wavelength3 > wavelength2) { wavelength3 = wavelength2; }
 
             // computing the average wave height
-            float waveHeight0 = wavelength0*Mathf.Min(1f, intensity0*waveIntensity)*(1f - 0.5f*waveDensity0)*0.17f;
+            var waveHeight0 = wavelength0*Mathf.Min(1f, intensity0*waveIntensity)*(1f - 0.5f*waveDensity0)*0.17f;
 
             // rounding to the decimeter
             waveHeight0 = 0.1f*Mathf.Round(waveHeight0*10f);

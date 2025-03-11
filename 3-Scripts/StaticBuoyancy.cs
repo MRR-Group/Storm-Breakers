@@ -18,14 +18,14 @@ namespace StormBreakers
         void Update()
         {
             // getting the ground depth
-            float groundDepth = 200f;
+            var groundDepth = 200f;
             if (Ocean.useTerrain)
             {
                 groundDepth = - Ocean.terrain.SampleHeight(undeformedPosition) - Ocean.terrain.transform.position.y;
             }
 
             // computing the ocean waves
-            Vector3 deformation = Ocean.OceanDeformation(Time.time, undeformedPosition, out _ , groundDepth);
+            var deformation = Ocean.OceanDeformation(Time.time, undeformedPosition, out _ , groundDepth);
 
             // setting the new position
             transform.position = undeformedPosition + deformation;

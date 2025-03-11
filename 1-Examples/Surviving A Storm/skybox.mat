@@ -8,8 +8,9 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: skybox
-  m_Shader: {fileID: -6465566751694194690, guid: 23d8d8ca78c9d3d49954c6eef7af6f66,
-    type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 23d8d8ca78c9d3d49954c6eef7af6f66, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _FOG
   m_InvalidKeywords: []
@@ -18,7 +19,9 @@ Material:
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: 1990
   stringTagMap: {}
-  disabledShaderPasses: []
+  disabledShaderPasses:
+  - MOTIONVECTORS
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -127,6 +130,7 @@ Material:
     - _skyColor: {r: 0.3137255, g: 0.3647059, b: 0.43137258, a: 0}
     - _waterColor: {r: 0.06857421, g: 0.14962603, b: 0.21698111, a: 1}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!114 &7416872109432437801
 MonoBehaviour:
   m_ObjectHideFlags: 11
@@ -139,4 +143,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  version: 5
+  version: 10

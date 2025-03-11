@@ -107,7 +107,7 @@ namespace StormBreakers
         public static void BakeAndPackWaveData()
         {
             // looping trough the 4 waves systems to bake datas 
-            for (int w = 0; w<4; w++)
+            for (var w = 0; w<4; w++)
             {
                 // baked datas are calculated with scientific formulas
                 wavenumber[w] = 2f*Mathf.PI/wavelength[w];
@@ -118,7 +118,7 @@ namespace StormBreakers
                 directionVector[w] = new Vector3(Mathf.Cos(direction[w]), 0f, Mathf.Sin(direction[w]));
 
                 // calculating the transverse vector as being directly perpendicualr to grid direction
-                Vector3 transverse = new Vector3(directionVector[w].z, 0f, -directionVector[w].x);
+                var transverse = new Vector3(directionVector[w].z, 0f, -directionVector[w].x);
 
                 // calculating vector i and j (axis of the losange grid)
                 iVector[w] = (transverse + directionVector[w])/Mathf.Sqrt(2f)/(setNumber[w]*wavelength[w]);
@@ -146,22 +146,22 @@ namespace StormBreakers
         static public Vector3 OceanDeformation(float time, Vector3 undeformedPosition, out Vector3 breakingVelocity, float groundDepth)
         {          
             // initializing ocean deformation on which eachs system will add its own deformation
-            Vector3 oceanDeformation = Vector3.zero;
+            var oceanDeformation = Vector3.zero;
 
             // initializing the local oriented amplitude as 0 because there is no bigger wave than the ocean systems for now
-            Vector3 localAmplitude = Vector3.zero;
+            var localAmplitude = Vector3.zero;
 
             // initializing the local breaking intensity
             breakingVelocity = Vector3.zero;
 
             // looping trough waves in decreasing size order
-            for (int w = 0; w<4; w++)
+            for (var w = 0; w<4; w++)
             {
                 // computing the wave deformation
                 Vector3 waveDeformation;
 
                 // calculating the system position
-                float systemPosition = -time*groupSpeed[w];
+                var systemPosition = -time*groupSpeed[w];
 
                 // group amplitude and unphasing
                 float unclampedAmplitude;
@@ -170,45 +170,45 @@ namespace StormBreakers
                 bool isFrontOfTheGroup;
 
                 // oriented losange grid
-                Vector3 worldAxisPosition = undeformedPosition - directionVector[w]*systemPosition;
-                float Ai = Vector3.Dot(worldAxisPosition, iVector[w]);
-                float Aj = Vector3.Dot(worldAxisPosition, jVector[w]);
+                var worldAxisPosition = undeformedPosition - directionVector[w]*systemPosition;
+                var Ai = Vector3.Dot(worldAxisPosition, iVector[w]);
+                var Aj = Vector3.Dot(worldAxisPosition, jVector[w]);
 
                 // calculating the coordiante of the center of the losange M
-                float im = Mathf.Floor(Ai) + 0.5f;
-                float jm = Mathf.Floor(Aj) + 0.5f;
+                var im = Mathf.Floor(Ai) + 0.5f;
+                var jm = Mathf.Floor(Aj) + 0.5f;
 
                 // calculating the randomized variation of the center of the group C relative to the center of the losange
                 // doing in several steps to save values for others computation
-                float randomimjm = Mathf.Cos(33f*im+53f*jm)*Mathf.Cos(20f*im+48f*jm);
-                float deltai = randomization[w]*randomimjm;
-                float randomjmim = Mathf.Cos(33f*jm+53f*im)*Mathf.Cos(20f*jm+48f*im);
-                float deltaj = randomization[w]*randomjmim; ;
+                var randomimjm = Mathf.Cos(33f*im+53f*jm)*Mathf.Cos(20f*im+48f*jm);
+                var deltai = randomization[w]*randomimjm;
+                var randomjmim = Mathf.Cos(33f*jm+53f*im)*Mathf.Cos(20f*jm+48f*im);
+                var deltaj = randomization[w]*randomjmim; ;
 
                 // calculating the minimal distance of the center of the group C to the edge of the losange
                 // non optimized : float distance = Mathf.Min(0.5f-Mathf.Abs(deltai), 0.5f-Mathf.Abs(deltaj));
-                float distance = Mathf.Min(0.5f-(deltai<0f ? -deltai : deltai), 0.5f-(deltaj<0f ? -deltaj : deltaj));
+                var distance = Mathf.Min(0.5f-(deltai<0f ? -deltai : deltai), 0.5f-(deltaj<0f ? -deltaj : deltaj));
 
                 // coordinate of the center of the group in losange grid, can be used for the breaking speed
-                float ic = im + deltai;
-                float jc = jm + deltaj;
+                var ic = im + deltai;
+                var jc = jm + deltaj;
 
                 // relative coordinate of the point in losange grid
-                float ir = (ic - Ai)/distance;
-                float jr = (jc - Aj)/distance;
+                var ir = (ic - Ai)/distance;
+                var jr = (jc - Aj)/distance;
 
                 // calculating the amplitude in i and j direction by making sure the value is clamped between 0 and 1
                 // non optimized : float relativeDistancei = Mathf.Min(1f, Mathf.Abs(ic));
-                float relativeDistancei = ir<0f ? -ir : ir; if (relativeDistancei > 1f) { relativeDistancei = 1f; }
-                float ai = 1f - relativeDistancei*relativeDistancei;
-                float relativeDistancej = jr<0f ? -jr : jr; if (relativeDistancej > 1f) { relativeDistancej = 1f; }
-                float aj = 1f - relativeDistancej*relativeDistancej;
+                var relativeDistancei = ir<0f ? -ir : ir; if (relativeDistancei > 1f) { relativeDistancei = 1f; }
+                var ai = 1f - relativeDistancei*relativeDistancei;
+                var relativeDistancej = jr<0f ? -jr : jr; if (relativeDistancej > 1f) { relativeDistancej = 1f; }
+                var aj = 1f - relativeDistancej*relativeDistancej;
 
                 // define wether is in front of the group or not
                 isFrontOfTheGroup = (ir-jr) > 0f;
 
                 // calculating the group amplitude variation over time
-                float variation = 0.8f + 0.2f*Mathf.Cos(10f*randomjmim + 0.1f*pulsation[w]*time);
+                var variation = 0.8f + 0.2f*Mathf.Cos(10f*randomjmim + 0.1f*pulsation[w]*time);
 
                 // calculating the phase advance
                 phaseAdvance = ir+jr;
@@ -224,7 +224,7 @@ namespace StormBreakers
                 unclampedAmplitude*=intensity[w];
 
                 // calculating the oriented amplitude simply by multipling the direction vector to the scalar amplitude
-                Vector3 orientedAmplitude = directionVector[w]*unclampedAmplitude;
+                var orientedAmplitude = directionVector[w]*unclampedAmplitude;
 
                 // clamping the oriented amplitude amplitude to [-1,1] taking in acount the existing local amplitude
                 // non optimized : orientedAmplitude.x = Mathf.Clamp(orientedAmplitude.x, -1f-localAmplitude.x, 1f-localAmplitude.x); 
@@ -235,34 +235,34 @@ namespace StormBreakers
                 else if (orientedAmplitude.z < -1f-localAmplitude.z) { orientedAmplitude.z = -1f-localAmplitude.z; }
 
                 // calculating the phase
-                float phase = Vector3.Dot(undeformedPosition, directionVector[w])*wavenumber[w] + time*pulsation[w] + unphasing + intensity[w]*phaseAdvance;
+                var phase = Vector3.Dot(undeformedPosition, directionVector[w])*wavenumber[w] + time*pulsation[w] + unphasing + intensity[w]*phaseAdvance;
 
                 // wave deformation
 
                 // clamping the scalar amplitude for the flatenable cos computation
                 // non optimized : float clampedAmplitude = Mathf.Min(unclampedAmplitude, 1f);
-                float clampedAmplitude = unclampedAmplitude > 1f ? 1f : unclampedAmplitude;
+                var clampedAmplitude = unclampedAmplitude > 1f ? 1f : unclampedAmplitude;
 
                 // calculating the relative phase that vary between 0 and 1 so it can be used with the pow function to make sharper waves
-                float relativePhase = phase/Mathf.PI -1f;
+                var relativePhase = phase/Mathf.PI -1f;
                 // modulo 2 : x - 2*Mathf.Floor(x/2) and subtracting 1
                 relativePhase = relativePhase - 2f*Mathf.Floor(relativePhase*0.5f) -1f;
                 // absolute
                 if (relativePhase < 0f) { relativePhase = -relativePhase; }
 
                 // calculating the vertical amplitude 
-                float verticalAmplitude = 0.085f*wavelength[w];
+                var verticalAmplitude = 0.085f*wavelength[w];
 
                 // including the terrain if any
                 if (useTerrain)
                 {
                     // the sahllow water amplitude is clamped to 0.5 time the depth plus a bit of its wavelength to make the waves rise a bit on the beach
-                    float shallowWaterAmplitude = 0.1f*verticalAmplitude + 0.5f*groundDepth;
+                    var shallowWaterAmplitude = 0.1f*verticalAmplitude + 0.5f*groundDepth;
                     // clamping to 0
                     shallowWaterAmplitude = shallowWaterAmplitude < 0f ? 0f : shallowWaterAmplitude;
 
                     // computing the clamping factor as defined in the VFX graph, and clamping to 0;1
-                    float clampingFactor = 1f - 0.5f*groundDepth/verticalAmplitude;
+                    var clampingFactor = 1f - 0.5f*groundDepth/verticalAmplitude;
                     if (clampingFactor > 1f) { clampingFactor = 1f; }
                     else if (clampingFactor < 0f) { clampingFactor = 0f; }
 
@@ -277,18 +277,18 @@ namespace StormBreakers
                 }
 
                 // calculating the vertical deformation, ajusted so the wave height is 0.17 time the wave lenght when maximal amplitude
-                float deltav = verticalAmplitude*(0.2f+Mathf.Cos(Mathf.PI*Mathf.Pow(relativePhase, 1f+clampedAmplitude*0.5f)));
+                var deltav = verticalAmplitude*(0.2f+Mathf.Cos(Mathf.PI*Mathf.Pow(relativePhase, 1f+clampedAmplitude*0.5f)));
 
                 // calculating the horizontal deformation (in "direction" direction)
-                float deltah = -0.12f*wavelength[w]*Mathf.Sin(phase);
+                var deltah = -0.12f*wavelength[w]*Mathf.Sin(phase);
 
                 // if the amplitude exceed a trigger, is in front of the wave and in back of the group, then it is likely there is a break force in the sea foam turmoils
                 if (unclampedAmplitude > 0.85f && deltah > 0f && isFrontOfTheGroup)
                 {
                     // then we must know if the phase at the middle of the group reached the breaking too
-                    float scaleij = setNumber[w]*wavelength[w];
-                    Vector3 centerGroupPosition = scaleij*scaleij*(ic*iVector[w] + jc*jVector[w]) + systemPosition*directionVector[w];
-                    float centerGroupPhase = Vector3.Dot(centerGroupPosition, directionVector[w])*wavenumber[w] + time*pulsation[w] + unphasing + intensity[w]*variation + 0.7f;
+                    var scaleij = setNumber[w]*wavelength[w];
+                    var centerGroupPosition = scaleij*scaleij*(ic*iVector[w] + jc*jVector[w]) + systemPosition*directionVector[w];
+                    var centerGroupPhase = Vector3.Dot(centerGroupPosition, directionVector[w])*wavenumber[w] + time*pulsation[w] + unphasing + intensity[w]*variation + 0.7f;
 
                     // then checking the horizontal deformation in the center of the group to see if it's the back of the wave
                     if (Mathf.Sin(centerGroupPhase) > 0f)
@@ -331,8 +331,8 @@ namespace StormBreakers
             deformation =  OceanDeformation(time, previousUndeformedPosition, out _, groundDepth);
 
             // then we can calculate the difference of the deformed water to the position
-            float deltaX = position.x - deformation.x - previousUndeformedPosition.x;
-            float deltaZ = position.z - deformation.z - previousUndeformedPosition.z;
+            var deltaX = position.x - deformation.x - previousUndeformedPosition.x;
+            var deltaZ = position.z - deformation.z - previousUndeformedPosition.z;
 
             // estimating the best undeformed position as being the previous one added to the difference calculated
             // the previous undeformed position become the new one and will be returned by the function to be looped again
@@ -380,15 +380,15 @@ namespace StormBreakers
             // what's left to be computed is 2 other water points and make a normalized cross product to get the normal
 
             // defining the 2 undeformed points
-            Vector3 undeformedForwardPoint = undeformedPosition + Vector3.forward*precision;
-            Vector3 undeformedLeftPoint = undeformedPosition + Vector3.right*precision;
+            var undeformedForwardPoint = undeformedPosition + Vector3.forward*precision;
+            var undeformedLeftPoint = undeformedPosition + Vector3.right*precision;
 
             // calculating the 2 deformed vectors
-            Vector3 deformedVector1 = undeformedPosition + alreadyComputedDeformation - undeformedForwardPoint - OceanDeformation(time, undeformedForwardPoint, out _, groundDepth);
-            Vector3 deformedVector2 = undeformedPosition + alreadyComputedDeformation - undeformedLeftPoint    - OceanDeformation(time, undeformedLeftPoint, out _, groundDepth);
+            var deformedVector1 = undeformedPosition + alreadyComputedDeformation - undeformedForwardPoint - OceanDeformation(time, undeformedForwardPoint, out _, groundDepth);
+            var deformedVector2 = undeformedPosition + alreadyComputedDeformation - undeformedLeftPoint    - OceanDeformation(time, undeformedLeftPoint, out _, groundDepth);
 
             //calculating the normal as being the cross product of t1 and t2
-            Vector3 normal = Vector3.Cross(deformedVector1, deformedVector2);
+            var normal = Vector3.Cross(deformedVector1, deformedVector2);
 
             // returning the normalized vector
             return normal.normalized;
@@ -410,15 +410,15 @@ namespace StormBreakers
             // the parameter dt [s] affect the precision of the calculation, too low it can lead to float unprecision, too high it won't take in count what happen in beetween
 
             // calculating the curent and future deformed position, outing the breaking torque here
-            Vector3 currentDeformedPosition = undeformedPosition + alreadyComputedDeformation;
-            Vector3 furtureDeformedPosition = undeformedPosition + OceanDeformation(time + dt, undeformedPosition, out Vector3 breakVelocity, groundDepth);
+            var currentDeformedPosition = undeformedPosition + alreadyComputedDeformation;
+            var furtureDeformedPosition = undeformedPosition + OceanDeformation(time + dt, undeformedPosition, out var breakVelocity, groundDepth);
 
             // to ease code writing, the breakingVelocity is removed from its y component used to store the vortex height
-            float vortexHeight = breakVelocity.y;
+            var vortexHeight = breakVelocity.y;
             breakVelocity.y = 0f;
 
             // the vector speed is the difference of the two divided by the time increment and adding the breaking velocity
-            Vector3 waterVelocity = (furtureDeformedPosition - currentDeformedPosition)/dt + breakVelocity;
+            var waterVelocity = (furtureDeformedPosition - currentDeformedPosition)/dt + breakVelocity;
 
             // the breaking torque happens when the depth is under the vortex height, which has been stored in the breakVelocity.y
             if (depth > -vortexHeight)
@@ -441,10 +441,10 @@ namespace StormBreakers
                 // non optimized :float attenuation = Mathf.Clamp(1f - 5f*depth/Mathf.Max(1f,waterVelocity.sqrMagnitude), 0f, 1f);
 
                 // getting the water velocity but not bellow 1m/s to avoid a division by zero
-                float waterSpeed = waterVelocity.sqrMagnitude; if (waterSpeed < 1f) { waterSpeed = 1f; }
+                var waterSpeed = waterVelocity.sqrMagnitude; if (waterSpeed < 1f) { waterSpeed = 1f; }
 
                 // computing the attenuation factor and clamping it
-                float attenuation = 1f - 5f*depth/waterSpeed;
+                var attenuation = 1f - 5f*depth/waterSpeed;
                 if (attenuation > 1f) { attenuation = 1f; }
                 else if (attenuation < 0f) { attenuation = 0f; }
 
@@ -464,11 +464,11 @@ namespace StormBreakers
         static public float GetWindSpeed(Vector3 position, bool computeTurbulence = false)
         {
             // compute the relative height and clamping
-            float relativeHeight = 0.5f + 0.5f*position.y*Wind.inverseHeight;
+            var relativeHeight = 0.5f + 0.5f*position.y*Wind.inverseHeight;
             if (relativeHeight > 1f) { relativeHeight = 1f; }
 
             // computing the wind in meter per second, is proportional to the relative height
-            float wind = relativeHeight*Wind.speed;
+            var wind = relativeHeight*Wind.speed;
 
             // adding the turbulence
             if (computeTurbulence)
@@ -488,11 +488,11 @@ namespace StormBreakers
         static public Vector3 GetWindVelocity(Vector3 position, bool computeTurbulence = false)
         {
             // compute the relative height and clamping
-            float relativeHeight = 0.5f + 0.5f*position.y*Wind.inverseHeight;
+            var relativeHeight = 0.5f + 0.5f*position.y*Wind.inverseHeight;
             if (relativeHeight > 1f) { relativeHeight = 1f; }
 
             // computing the wind vector in meter per second,  is proportional to the relative height
-            Vector3 wind = new Vector3(Wind.cosDirection, 0f, Wind.sinDirection)*relativeHeight*Wind.speed;
+            var wind = new Vector3(Wind.cosDirection, 0f, Wind.sinDirection)*relativeHeight*Wind.speed;
 
             // adding the turbulences
             if (computeTurbulence)

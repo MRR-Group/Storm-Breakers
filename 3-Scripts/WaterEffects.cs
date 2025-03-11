@@ -139,7 +139,7 @@ namespace StormBreakers
 
             // --------- initializing audio ---------------
             // checking the component
-            AudioSource audioSource = GetComponent<AudioSource>();
+            var audioSource = GetComponent<AudioSource>();
             if (audioSource == null)
             {
                 generateAudio = false;
@@ -157,7 +157,7 @@ namespace StormBreakers
 
             // getting the simulated mesh
             // uploading the mesh to the mesh filter if any
-            MeshFilter meshFilter = GetComponent<MeshFilter>();
+            var meshFilter = GetComponent<MeshFilter>();
             if (meshFilter != null)
             {
                 simulatedMesh = meshFilter.mesh;
@@ -182,20 +182,20 @@ namespace StormBreakers
             undeformedPosition =  new Vector3[numberOfTriangles];
 
             // calculating the per-triangle values
-            for (int t = 0; t<numberOfTriangles; t++)
+            for (var t = 0; t<numberOfTriangles; t++)
             {
                 // initializing whether the triangle is simulated
                 simulatedTriangle[t] = true;
 
                 // getting each vertex of the triangle
-                Vector3 vertex1 = simulatedMesh.vertices[simulatedMesh.triangles[3*t]];
-                Vector3 vertex2 = simulatedMesh.vertices[simulatedMesh.triangles[3*t + 1]];
-                Vector3 vertex3 = simulatedMesh.vertices[simulatedMesh.triangles[3*t + 2]];
+                var vertex1 = simulatedMesh.vertices[simulatedMesh.triangles[3*t]];
+                var vertex2 = simulatedMesh.vertices[simulatedMesh.triangles[3*t + 1]];
+                var vertex3 = simulatedMesh.vertices[simulatedMesh.triangles[3*t + 2]];
 
                 // scaling the vertex with the transform scale for the computation of the area and size
-                Vector3 scaledVertex1 = Vector3.Scale(transform.localScale, vertex1);
-                Vector3 scaledVertex2 = Vector3.Scale(transform.localScale, vertex2);
-                Vector3 scaledVertex3 = Vector3.Scale(transform.localScale, vertex3);
+                var scaledVertex1 = Vector3.Scale(transform.localScale, vertex1);
+                var scaledVertex2 = Vector3.Scale(transform.localScale, vertex2);
+                var scaledVertex3 = Vector3.Scale(transform.localScale, vertex3);
 
                 // calculating the unscaled center of the triangle being the average of each unscaled vertex
                 triangleCenter[t] = (vertex1 + vertex2 + vertex3)/3f;
@@ -207,10 +207,10 @@ namespace StormBreakers
                 undeformedPosition[t] = transform.TransformPoint(triangleCenter[t]);
 
                 // calculating the cross product that will serve to calculate the scaled area of the traingle and its normal
-                Vector3 crossProduct = Vector3.Cross(scaledVertex2 - scaledVertex1, scaledVertex3 - scaledVertex1);
+                var crossProduct = Vector3.Cross(scaledVertex2 - scaledVertex1, scaledVertex3 - scaledVertex1);
 
                 // calulating the area of the triangle being half the magnitude of the cross product
-                float area = 0.5f*crossProduct.magnitude;
+                var area = 0.5f*crossProduct.magnitude;
                 triangleArea[t] = area;
 
                 // calculating the size of the triangle as being the square root of the surface (approx)
@@ -261,20 +261,20 @@ namespace StormBreakers
         private void DefineSimulatedTriangle() // define whether each triangle will be simulated according to their height and the maximal waves
         {
             // getting the maximal wave height
-            float maxWaveHeight = 0f;
+            var maxWaveHeight = 0f;
 
             // running through each wave system to add wave height
-            for (int w = 0; w < 4; w++)
+            for (var w = 0; w < 4; w++)
             {
                 // increasing the max wave height with the current wave height
                 maxWaveHeight += Ocean.wavelength[w]*0.085f*Mathf.Min(1f, Ocean.intensity[w]);
             }
 
             // running through each triangles
-            for (int t = 0; t<numberOfTriangles; t++)
+            for (var t = 0; t<numberOfTriangles; t++)
             {
                 // getting the world posiiton of the triangle
-                Vector3 worlTrianglePosition = transform.TransformPoint(triangleCenter[t]);
+                var worlTrianglePosition = transform.TransformPoint(triangleCenter[t]);
 
                  // defining whether the triangle is simulated : when its height is under the highest wave in absolute including a bit of its size
                 simulatedTriangle[t] = !isStatic | Mathf.Abs(worlTrianglePosition.y) - 0.5f*triangleSize[t] < maxWaveHeight;
@@ -292,7 +292,7 @@ namespace StormBreakers
                 if (!isStatic)
                 {
                     // runing through each trangles
-                    for (int t = 0; t<numberOfTriangles; t++)
+                    for (var t = 0; t<numberOfTriangles; t++)
                     {
                         // setting defautls value of flat water, keeping underformed position updated in case the wave are computed again
                         undeformedPosition[t] = transform.TransformPoint(triangleCenter[t]);
@@ -306,26 +306,26 @@ namespace StormBreakers
             else
             {
                 // runing through each trangles
-                for (int t = 0; t<numberOfTriangles; t++)
+                for (var t = 0; t<numberOfTriangles; t++)
                 {
                     // checking wether the triangle is simulated
                     if (simulatedTriangle[t])
                     {
                         // computing the world space position of the triangle
-                        Vector3 worldTriangleCenter = transform.TransformPoint(triangleCenter[t]);
+                        var worldTriangleCenter = transform.TransformPoint(triangleCenter[t]);
 
                         // getting the ground depth
-                        float groundDepth = 200f;
+                        var groundDepth = 200f;
                         if (Ocean.useTerrain)
                         {
                             groundDepth = -Ocean.terrain.SampleHeight(undeformedPosition[t]) - Ocean.terrain.transform.position.y;
                         }
 
                         // updating the undeformed position and getting the height of the water
-                        waterHeight[t] = Ocean.GetHeight(Time.time, worldTriangleCenter, ref undeformedPosition[t], out Vector3 deformation, groundDepth);
+                        waterHeight[t] = Ocean.GetHeight(Time.time, worldTriangleCenter, ref undeformedPosition[t], out var deformation, groundDepth);
 
                         // calculating the depth as being the water level minus the vertical position of the triangle, is positive inside water 
-                        float depth = waterHeight[t] - worldTriangleCenter.y;
+                        var depth = waterHeight[t] - worldTriangleCenter.y;
 
                         // getting velocity of the water and the breaking torque
                         waterVelocity[t] = Ocean.GetVelocity(Time.time, undeformedPosition[t], deformation, out _, depth, groundDepth);
@@ -341,7 +341,7 @@ namespace StormBreakers
             {
                 // applying the pitch when it get lower to the previous value
                 // non optimized : pitch = Mathf.Min(pitch, pitchFactor/dynamicPressure);
-                float newPitch = pitchFactor/totalDynamicPressure;
+                var newPitch = pitchFactor/totalDynamicPressure;
                 pitch = pitch>newPitch ? newPitch : pitch;
 
                 // making the pitch fade off
@@ -353,7 +353,7 @@ namespace StormBreakers
 
                 // applying the volume only when it get louder 
                 // non optimized : volume = Mathf.Max(volume, dynamicPressure*volumeFactor);
-                float newVolume = totalDynamicPressure*volumeFactor;
+                var newVolume = totalDynamicPressure*volumeFactor;
                 volume = volume<newVolume ? newVolume : volume;
 
                 // volume fade off fucntion of the volume itself
@@ -378,44 +378,44 @@ namespace StormBreakers
             // ------------- computing the forces, particles and audio ----------------------       
 
             // initializing the current total dynamic pressure, this will overwrite the value used for the audio only when bigger to keep quick burst audio that happens within the fixed frames serie
-            float curentTotalDynamicPressure = 0f;
+            var curentTotalDynamicPressure = 0f;
 
             // running for each triangle
-            for (int t = 0; t<numberOfTriangles; t++)
+            for (var t = 0; t<numberOfTriangles; t++)
             {
                 // checking wether the triangle is simulated
                 if (simulatedTriangle[t])
                 {
                     // getting the wolrd space center of the triangle
-                    Vector3 worldTriangleCenter = transform.TransformPoint(triangleCenter[t]);
+                    var worldTriangleCenter = transform.TransformPoint(triangleCenter[t]);
 
                     // trying to update undeformed position reguardless of the wave in an atemmpt to make the GetHeight function more acurate.
                     undeformedPosition[t] += worldTriangleCenter - previousWorldTriangleCenter[t];
 
                     // getting the velocity before setting previous world tirangle center
-                    Vector3 triangleVelocity = (worldTriangleCenter - previousWorldTriangleCenter[t])/Time.fixedDeltaTime;
+                    var triangleVelocity = (worldTriangleCenter - previousWorldTriangleCenter[t])/Time.fixedDeltaTime;
 
                     // setting previous world tirangle center for next loop
                     previousWorldTriangleCenter[t] = worldTriangleCenter;
 
                     // getting the depth, it is asumed that in the several frame of fixed update, the water don't move but the triangles do
-                    float depth = waterHeight[t] - worldTriangleCenter.y;
+                    var depth = waterHeight[t] - worldTriangleCenter.y;
 
                     // calculating the wind at the triangle world position that is shared with force computation and particle generation
-                    float wind = Ocean.GetWindSpeed(worldTriangleCenter);
-                    Vector3 windVector = Ocean.GetWindVelocity(worldTriangleCenter);
+                    var wind = Ocean.GetWindSpeed(worldTriangleCenter);
+                    var windVector = Ocean.GetWindVelocity(worldTriangleCenter);
 
                     //particles can happens a bit outside water
                     if (depth > -0.5f*triangleSize[t])
                     {
                         // setting the normal in world space
-                        Vector3 worldTriangleNormal = transform.TransformDirection(triangleNormal[t]);
+                        var worldTriangleNormal = transform.TransformDirection(triangleNormal[t]);
 
                         // the relative velocity is the difference between the velocity given by the rigidbody and the water velocity
-                        Vector3 relativeVelocity = waterVelocity[t] - triangleVelocity;
+                        var relativeVelocity = waterVelocity[t] - triangleVelocity;
 
                         //computing the normal component of the velocity relative to the triangle
-                        float normalVelocity = Vector3.Dot(relativeVelocity, worldTriangleNormal);
+                        var normalVelocity = Vector3.Dot(relativeVelocity, worldTriangleNormal);
 
                         //-------------- particles & audio generation-----------------------
 
@@ -475,11 +475,11 @@ namespace StormBreakers
             if (generateAudio)
             {
                 // looping through each sample
-                for (int s = 0; s < data.Length; s += channels)
+                for (var s = 0; s < data.Length; s += channels)
                 {
                     // ---- left chanel (index = s + 0) ----            
                     // applying the low pass filter
-                    float filteredDataleft = pitch*data[s] + (1f-pitch)*lastFilteredDataLeft;
+                    var filteredDataleft = pitch*data[s] + (1f-pitch)*lastFilteredDataLeft;
 
                     // saving the last filtered data
                     lastFilteredDataLeft = filteredDataleft;
@@ -489,7 +489,7 @@ namespace StormBreakers
 
                     // ---- right chanel (index = s + 1) ----
                     // applying the low pass filter
-                    float filteredDataRight = pitch*data[s+1] + (1f-pitch)*lastFilteredDataRight;
+                    var filteredDataRight = pitch*data[s+1] + (1f-pitch)*lastFilteredDataRight;
 
                     // saving the last filtered data
                     lastFilteredDataRight = filteredDataRight;
@@ -517,17 +517,17 @@ namespace StormBreakers
             public void Execute(int t)
             {
                 // updating the undeformed position and getting the height of the water
-                Vector3 currentUndeformedPosition = undeformedPosition[t];
-                waterHeight[t] = Ocean.GetHeight(time, worldTriangleCenter[t], ref currentUndeformedPosition, out Vector3 deformation);
+                var currentUndeformedPosition = undeformedPosition[t];
+                waterHeight[t] = Ocean.GetHeight(time, worldTriangleCenter[t], ref currentUndeformedPosition, out var deformation);
 
                 // the undeformed position is updated and will be passed to the next frame
                 undeformedPosition[t] = currentUndeformedPosition;
 
                 // calculating the depth as beign the water level minus the vertical position of the triangle, is positive inside water
-                float depth = waterHeight[t] - worldTriangleCenter[t].y; ;
+                var depth = waterHeight[t] - worldTriangleCenter[t].y; ;
 
                 // getting velocity of the water
-                waterVelocity[t] = Ocean.GetVelocity(time, undeformedPosition[t], deformation, out Vector3 breakingTorque, depth);
+                waterVelocity[t] = Ocean.GetVelocity(time, undeformedPosition[t], deformation, out var breakingTorque, depth);
 
                 // collecting the torque generated by the breakers
                 waterTorque[t] = breakingTorque;

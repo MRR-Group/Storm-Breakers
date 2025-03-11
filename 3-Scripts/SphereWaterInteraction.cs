@@ -31,7 +31,7 @@ namespace StormBreakers
         private Vector3 waterNormal; // is set in Update and got in fixedUpdate
         private Vector3 waterVelocity; // is set in Update and got in fixedUpdate
         private Rigidbody rb; // the rigid body attached to this gameObject
-        private float area; // [m²] the projected surface of the sphere
+        private float area; // [mï¿½] the projected surface of the sphere
 
 
         [Space(10)]
@@ -147,7 +147,7 @@ namespace StormBreakers
 
             // --------- initializing audio ---------------
             // checking the component
-            AudioSource audioSource = GetComponent<AudioSource>();
+            var audioSource = GetComponent<AudioSource>();
             if (audioSource == null)
             {
                 generateAudio = false;
@@ -172,11 +172,11 @@ namespace StormBreakers
             // settign the use of the gravity, if no forces generation is requested, the gravity need to be deactivated otherwise the object will make a free fall through the water
             rb.useGravity = generateWaterForce;
 
-            // calculating the projected surface (pi.r²)
+            // calculating the projected surface (pi.rï¿½)
             area = Mathf.PI*radius*radius;
 
             // calculating the mass (m = rho*4/3*pi*r^3)
-            float mass = density*1000f*4f*Mathf.PI/3f*radius*radius*radius;
+            var mass = density*1000f*4f*Mathf.PI/3f*radius*radius*radius;
             rb.mass = mass;
 
             // calculating the center of gravity shift and setting it to the rigid body
@@ -184,9 +184,9 @@ namespace StormBreakers
 
             // calculating the rotational inertia as being a sphere with a center of mass shifted in y direction
             rb.inertiaTensor = new Vector3(
-                inertiaTensorFactor*2f/5f*mass*radius*radius + mass*radius*radius, // 2/5.m.R² + m.d² 
-                inertiaTensorFactor*2f/5f*mass*radius*radius,                      // 2/5.m.R²            
-                inertiaTensorFactor*2f/5f*mass*radius*radius + mass*radius*radius  // 2/5.m.R² + m.d²   
+                inertiaTensorFactor*2f/5f*mass*radius*radius + mass*radius*radius, // 2/5.m.Rï¿½ + m.dï¿½ 
+                inertiaTensorFactor*2f/5f*mass*radius*radius,                      // 2/5.m.Rï¿½            
+                inertiaTensorFactor*2f/5f*mass*radius*radius + mass*radius*radius  // 2/5.m.Rï¿½ + m.dï¿½   
                 );
             rb.inertiaTensorRotation = Quaternion.identity;
         }
@@ -229,17 +229,17 @@ namespace StormBreakers
             // ocean computation is done in update to avoid doing it several time per frame
 
             // getting the ground depth
-            float groundDepth = 200f;
+            var groundDepth = 200f;
             if (Ocean.useTerrain)
             {
                 groundDepth = - Ocean.terrain.SampleHeight(undeformedPosition) - Ocean.terrain.transform.position.y;
             }
 
             // updating the undeformed position and getting the height of the water
-            waterHeight = Ocean.GetHeight(Time.time, transform.position, ref undeformedPosition, out Vector3 deformation, groundDepth);
+            waterHeight = Ocean.GetHeight(Time.time, transform.position, ref undeformedPosition, out var deformation, groundDepth);
 
             // calculating the depth as beign the water level minus the vertical position of the triangle, is positive inside water 
-            float depth = waterHeight - transform.position.y + radius;
+            var depth = waterHeight - transform.position.y + radius;
 
             // calculating the water normal and velocity only when touching the water
             if (depth > 0f)
@@ -259,7 +259,7 @@ namespace StormBreakers
             {
                 // applying the volume only when it get louder 
                 // non optimized : volume = Mathf.Max(volume, dynamicPressure*volumeFactor);
-                float newVolume = dynamicPressure*volumeFactor;
+                var newVolume = dynamicPressure*volumeFactor;
                 volume = volume<newVolume ? newVolume : volume;
 
                 // volume fade off fucntion of the volume itself
@@ -272,7 +272,7 @@ namespace StormBreakers
 
                 // applying the pitch when it get lower to the previous value
                 // non optimized : pitch = Mathf.Min(pitch, pitchFactor/dynamicPressure);
-                float newPitch = pitchFactor/dynamicPressure;
+                var newPitch = pitchFactor/dynamicPressure;
                 pitch = pitch>newPitch ? newPitch : pitch;
 
                 // making the pitch fade off
@@ -290,15 +290,15 @@ namespace StormBreakers
             dynamicPressure = 0f;
 
             // getting the depth
-            float depth = waterHeight - transform.position.y + radius;
+            var depth = waterHeight - transform.position.y + radius;
 
             // trying to update undeformed position reguardless of the wave in an atemmpt to make the GetHeight function more acurate.
             undeformedPosition += transform.position - previousPosition;
             previousPosition = transform.position;
 
             // calculating the wind position that is shared with force computation and particle generation
-            float wind = Ocean.GetWindSpeed(transform.position);
-            Vector3 windVector = Ocean.GetWindVelocity(transform.position);
+            var wind = Ocean.GetWindSpeed(transform.position);
+            var windVector = Ocean.GetWindVelocity(transform.position);
 
             //----------- force computation------------------
             //forces happen when inside water
@@ -309,14 +309,14 @@ namespace StormBreakers
 
                 // calculating the buoyancy force by making the approximation that the volume of water displaced is proportional to depth
                 // rho.g.4/3.pi.R^3*depth/2R = rho.g.4/6.pi.R^2*depth
-                Vector3 buoyancyForce = 20943.95f*radius*radius*depth*waterNormal;
+                var buoyancyForce = 20943.95f*radius*radius*depth*waterNormal;
 
                 // calculating the velocity relative to the water
-                Vector3 relativeVelocity = waterVelocity - rb.velocity;
+                var relativeVelocity = waterVelocity - rb.linearVelocity;
 
                 // calculating the drag force by making the approximation that the imerged surface is proportional to the depth
-                // 1/2.rho.V².S.Cx
-                Vector3 dragForce = dragCoeff*500f*relativeVelocity*relativeVelocity.magnitude*area*depth/(2f*radius);
+                // 1/2.rho.Vï¿½.S.Cx
+                var dragForce = dragCoeff*500f*relativeVelocity*relativeVelocity.magnitude*area*depth/(2f*radius);
 
                 // the force apply in the middle of the sphere
                 if (generateWaterForce) { rb.AddForceAtPosition(dragForce + buoyancyForce, transform.position); }
@@ -331,10 +331,10 @@ namespace StormBreakers
                 //-------------- particles & audio generation-----------------------
 
                 // calculating the magnitude of relative speed
-                float relativeSpeed = relativeVelocity.magnitude;
+                var relativeSpeed = relativeVelocity.magnitude;
 
                 // deducing the direction facing the flow
-                Vector3 flowVector = relativeVelocity/relativeSpeed;
+                var flowVector = relativeVelocity/relativeSpeed;
 
                 // particles are generated only when no too deep
                 // and when the chrono says so
@@ -347,7 +347,7 @@ namespace StormBreakers
                         // setting the foam burst attribute
                         eventAttribute.SetFloat(spawnCountID, burstCount);
                         eventAttribute.SetVector3(positionID, transform.position - radius*flowVector - Vector3.up*depth);
-                        eventAttribute.SetVector3(triangleVelocityID, rb.velocity);
+                        eventAttribute.SetVector3(triangleVelocityID, rb.linearVelocity);
                         eventAttribute.SetVector3(waterVelocityID, waterVelocity);
                         eventAttribute.SetVector3(triangleNormalID, flowVector);
                         eventAttribute.SetFloat(triangleSizeID, 0.5f*radius);
@@ -384,11 +384,11 @@ namespace StormBreakers
             if (generateAudio)
             {
                 // looping through each sample
-                for (int s = 0; s < data.Length; s += channels)
+                for (var s = 0; s < data.Length; s += channels)
                 {
                     // ---- left chanel (index = s + 0) ----            
                     // applying the low pass filter
-                    float filteredDataleft = pitch*data[s] + (1f-pitch)*lastFilteredDataLeft;
+                    var filteredDataleft = pitch*data[s] + (1f-pitch)*lastFilteredDataLeft;
 
                     // saving the last filtered data
                     lastFilteredDataLeft = filteredDataleft;
@@ -398,7 +398,7 @@ namespace StormBreakers
 
                     // ---- right chanel (index = s + 1) ----
                     // applying the low pass filter
-                    float filteredDataRight = pitch*data[s+1] + (1f-pitch)*lastFilteredDataRight;
+                    var filteredDataRight = pitch*data[s+1] + (1f-pitch)*lastFilteredDataRight;
 
                     // saving the last filtered data
                     lastFilteredDataRight = filteredDataRight;

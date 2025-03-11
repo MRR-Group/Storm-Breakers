@@ -52,7 +52,7 @@ namespace StormBreakers
         void Update()
         {
             // checking wether underwater   
-            bool underwater = detectWater.Depth > depthTrigger;
+            var underwater = detectWater.Depth > depthTrigger;
 
             // acting only when there is a change
             if (underwater != previousUnderwater)

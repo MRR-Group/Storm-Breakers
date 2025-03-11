@@ -59,17 +59,17 @@ namespace StormBreakers
             previousWorldTriangleCenter =  new Vector3[numberOfTriangles];
 
             // calculating the per-triangle values by looping trough each triangle
-            for (int t = 0; t<numberOfTriangles; t++)
+            for (var t = 0; t<numberOfTriangles; t++)
             {
                 // getting each vertex of the triangle
-                Vector3 vertex1 = colliderMesh.vertices[colliderMesh.triangles[3*t]];
-                Vector3 vertex2 = colliderMesh.vertices[colliderMesh.triangles[3*t + 1]];
-                Vector3 vertex3 = colliderMesh.vertices[colliderMesh.triangles[3*t + 2]];
+                var vertex1 = colliderMesh.vertices[colliderMesh.triangles[3*t]];
+                var vertex2 = colliderMesh.vertices[colliderMesh.triangles[3*t + 1]];
+                var vertex3 = colliderMesh.vertices[colliderMesh.triangles[3*t + 2]];
 
                 // saving the scaled vertex local position for later
-                Vector3 scaledVertex1 = Vector3.Scale(transform.localScale, vertex1);
-                Vector3 scaledVertex2 = Vector3.Scale(transform.localScale, vertex2);
-                Vector3 scaledVertex3 = Vector3.Scale(transform.localScale, vertex3);
+                var scaledVertex1 = Vector3.Scale(transform.localScale, vertex1);
+                var scaledVertex2 = Vector3.Scale(transform.localScale, vertex2);
+                var scaledVertex3 = Vector3.Scale(transform.localScale, vertex3);
 
                 // calculating the unscaled center of the triangle being the average of each unscaled vertex
                 triangleCenter[t] = (vertex1 + vertex2 + vertex3)/3f;
@@ -79,7 +79,7 @@ namespace StormBreakers
                 previousWorldTriangleCenter[t] = undeformedPosition[t];
 
                 // calculating the cross product that will serve to calculate the scaled area of the triangle and its normal
-                Vector3 crossProduct = Vector3.Cross(scaledVertex2 - scaledVertex1, scaledVertex3 - scaledVertex1);
+                var crossProduct = Vector3.Cross(scaledVertex2 - scaledVertex1, scaledVertex3 - scaledVertex1);
 
                 // calulating the area of the triangle being half the magnitude of the cross product
                 triangleArea[t] = 0.5f*crossProduct.magnitude;
@@ -101,10 +101,10 @@ namespace StormBreakers
             if (flatWater)
             {
                 // runing through each triangles
-                for (int t = 0; t<numberOfTriangles; t++)
+                for (var t = 0; t<numberOfTriangles; t++)
                 {
                     // computing the world space position of the triangle
-                    Vector3 worldTriangleCenter = transform.TransformPoint(triangleCenter[t]);
+                    var worldTriangleCenter = transform.TransformPoint(triangleCenter[t]);
                     undeformedPosition[t] = worldTriangleCenter;
 
                     //computing the fluid velocity depending on whether inside water or not
@@ -127,23 +127,23 @@ namespace StormBreakers
             else
             {
                 // running trough all triangle to calculate each's triangle forces
-                for (int t = 0; t<numberOfTriangles; t++)
+                for (var t = 0; t<numberOfTriangles; t++)
                 {
                     // getting the world space position of the triangle
-                    Vector3 worldTriangleCenter = transform.TransformPoint(triangleCenter[t]);
+                    var worldTriangleCenter = transform.TransformPoint(triangleCenter[t]);
 
                     // getting the ground depth
-                    float groundDepth = 200f;
+                    var groundDepth = 200f;
                     if (Ocean.useTerrain)
                     {
                         groundDepth = - Ocean.terrain.SampleHeight(undeformedPosition[t]) - Ocean.terrain.transform.position.y;
                     }
 
                     // updating the undeformed position and getting the height of the water
-                    waterHeight[t] = Ocean.GetHeight(Time.time, worldTriangleCenter, ref undeformedPosition[t], out Vector3 deformation, groundDepth);
+                    waterHeight[t] = Ocean.GetHeight(Time.time, worldTriangleCenter, ref undeformedPosition[t], out var deformation, groundDepth);
 
                     // calculating the depth as beign the water level minus the vertical position of the triangle, is positive inside water
-                    float depth = waterHeight[t] - worldTriangleCenter.y;
+                    var depth = waterHeight[t] - worldTriangleCenter.y;
 
                     //computing the fluid velocity depending on whether inside water or not
                     if (depth > 0f)
@@ -164,36 +164,36 @@ namespace StormBreakers
         private void FixedUpdate()
         {
             // running trough all triangle to calculate each's triangle forces
-            for (int t = 0; t<numberOfTriangles; t++)
+            for (var t = 0; t<numberOfTriangles; t++)
             {
                 // getting the world space triangle center
-                Vector3 worldTriangleCenter = transform.TransformPoint(triangleCenter[t]);
+                var worldTriangleCenter = transform.TransformPoint(triangleCenter[t]);
 
                 // trying to update undeformed position reguardless of the wave in an atemmpt to make the GetHeight function more acurate.
                 undeformedPosition[t] += worldTriangleCenter - previousWorldTriangleCenter[t];
                 previousWorldTriangleCenter[t] = worldTriangleCenter;
 
                 // getting hte world space normal
-                Vector3 worldTriangleNormal = transform.TransformDirection(triangleNormal[t]);
+                var worldTriangleNormal = transform.TransformDirection(triangleNormal[t]);
 
                 // the relative velocity is the difference between the velocity given by the rigidbody and the medium velocity
-                Vector3 relativeVelocity = fluidVelocity[t] - rb.GetPointVelocity(worldTriangleCenter);
+                var relativeVelocity = fluidVelocity[t] - rb.GetPointVelocity(worldTriangleCenter);
 
                 // getting its magnitude, 
-                float relativeSpeed = relativeVelocity.magnitude;
+                var relativeSpeed = relativeVelocity.magnitude;
 
                 // no force are generated under too low speed to avoid a 0 division
                 if (relativeSpeed > 0.1f)
                 {
                     // computing the approximated angle of attack with the dot product of the normaized velocity vector and normal
-                    float angleOfAttack = Vector3.Dot(relativeVelocity/relativeSpeed, worldTriangleNormal);
+                    var angleOfAttack = Vector3.Dot(relativeVelocity/relativeSpeed, worldTriangleNormal);
 
                     // computing the lift coefficient and clamping to -1,1 (the coef of a flat plane against a normal stream)
-                    float coeff = angleOfAttack*liftCoeff;
+                    var coeff = angleOfAttack*liftCoeff;
                     if (coeff > 1f) { coeff = 1f; }
                     if (coeff <-1f) { coeff =-1f; }
 
-                    // the pressurea acting on the triangle is 1/2.rho.V².Cl depending on the fluid acting on it
+                    // the pressurea acting on the triangle is 1/2.rho.Vï¿½.Cl depending on the fluid acting on it
                     float dynamicPressure;
                     if (waterHeight[t] > worldTriangleCenter.y) // in the water
                     {
@@ -223,7 +223,7 @@ namespace StormBreakers
                     }
 
                     // the force is the pressure time the area and directed in triangle normal
-                    Vector3 force = dynamicPressure*triangleArea[t]*worldTriangleNormal;
+                    var force = dynamicPressure*triangleArea[t]*worldTriangleNormal;
 
                     // applying the force
                     rb.AddForceAtPosition(force, worldTriangleCenter);

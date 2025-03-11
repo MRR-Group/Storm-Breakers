@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
@@ -39,6 +40,15 @@ namespace StormBreakers
 
         // internal physic data
         private Mesh simulatedMesh; // the mesh used to compute the force, audio and particles
+        private Mesh runtimeSimulationMesh;
+        private Mesh ownedHullMesh;
+        [SerializeField] private bool drawSimulationMesh;
+        private float[] runtimeBuoyancyMultipliers;
+        private bool waterDataReady;
+
+        public bool IsInitialized { get; private set; }
+        public HullBuildResult ColliderHull { get; private set; }
+
         private int numberOfTriangles; // the number of triangle in the simulated mesh
         private Vector3[] triangleCenter; // the local center of each triangle
         private Vector3[] previousWorldTriangleCenter;
@@ -133,13 +143,11 @@ namespace StormBreakers
         private void Start()
         {
             // -------- initializing the physics data ---------------
-            InitializePhysic();
-
-            // constructing the array that will be used to parse data from update to FixedUpdate
-            waterHeight = new float[numberOfTriangles];
-            waterNormal = new Vector3[numberOfTriangles];
-            waterVelocity = new Vector3[numberOfTriangles];
-            waterTorque = new Vector3[numberOfTriangles];
+            if (!IsInitialized && !InitializePhysic())
+            {
+                enabled = false;
+                return;
+            }
 
             // -------- initializing the VFX -------
             // getting the component
@@ -194,13 +202,125 @@ namespace StormBreakers
             pressureExcessOccurrences = 0;
         }
 
-        void InitializePhysic()
+        /// <summary>
+        /// Builds a simulation hull from colliders and applies the resulting mass properties.
+        /// WaterInteraction owns the generated mesh and releases it on replacement or destruction.
+        /// </summary>
+        public bool InitializeFromColliders(IReadOnlyList<HullElement> elements)
         {
+            if (!TryGetComponent<Rigidbody>(out var body))
+            {
+                Debug.LogError("Collider hull initialization requires a Rigidbody.", this);
+                return false;
+            }
+
+            if (!ColliderHullBuilder.TryBuild(body, elements, out var hull))
+            {
+                return false;
+            }
+
+            if (!InitializeSimulationMesh(hull.Mesh, hull.BuoyancyMultipliers))
+            {
+                if (Application.isPlaying) Destroy(hull.Mesh);
+                else DestroyImmediate(hull.Mesh);
+                return false;
+            }
+
+            ownedHullMesh = hull.Mesh;
+            ColliderHull = hull;
+            body.mass = hull.TotalMass;
+            body.centerOfMass = hull.CenterOfMass;
+            body.ResetInertiaTensor();
+            return true;
+        }
+
+        private void OnDestroy()
+        {
+            ReleaseOwnedHullMesh();
+        }
+
+        private void ReleaseOwnedHullMesh()
+        {
+            if (ownedHullMesh == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying) Destroy(ownedHullMesh);
+            else DestroyImmediate(ownedHullMesh);
+
+            ownedHullMesh = null;
+            ColliderHull = null;
+        }
+
+        /// <summary>
+        /// Accepts a runtime simulation mesh while preserving existing Rigidbody properties and colliders.
+        /// Optional multipliers adjust hydrostatic pressure per triangle.
+        /// </summary>
+        public bool InitializeSimulationMesh(Mesh mesh, float[] buoyancyMultipliers = null)
+        {
+            if (mesh == null || !mesh.isReadable || mesh.vertexCount == 0 || mesh.triangles.Length == 0)
+            {
+                Debug.LogError("A readable, non-empty simulation mesh is required.", this);
+                return false;
+            }
+
+            int triangleCount = mesh.triangles.Length / 3;
+            if (buoyancyMultipliers != null)
+            {
+                if (buoyancyMultipliers.Length != triangleCount)
+                {
+                    Debug.LogError("The buoyancy multiplier count must match the simulation triangle count.", this);
+                    return false;
+                }
+
+                foreach (float multiplier in buoyancyMultipliers)
+                {
+                    if (!float.IsFinite(multiplier) || multiplier < 0f)
+                    {
+                        Debug.LogError("Buoyancy multipliers must be finite and non-negative.", this);
+                        return false;
+                    }
+                }
+            }
+
+            Mesh previousRuntimeMesh = runtimeSimulationMesh;
+            Mesh previousSimulatedMesh = simulatedMesh;
+            float[] previousMultipliers = runtimeBuoyancyMultipliers;
+            runtimeSimulationMesh = mesh;
+            runtimeBuoyancyMultipliers = buoyancyMultipliers == null ? null : (float[])buoyancyMultipliers.Clone();
+
+            if (!InitializePhysic())
+            {
+                runtimeSimulationMesh = previousRuntimeMesh;
+                runtimeBuoyancyMultipliers = previousMultipliers;
+                simulatedMesh = previousSimulatedMesh;
+                if (previousSimulatedMesh != null) InitializePhysic();
+                return false;
+            }
+
+            if (ownedHullMesh != null && ownedHullMesh != mesh)
+            {
+                ReleaseOwnedHullMesh();
+            }
+
+            return true;
+        }
+
+        private bool InitializePhysic()
+        {
+            IsInitialized = false;
+            waterDataReady = false;
+
             // -------- getting components and mesh ---------------
 
             // if a hull generator is attached and will use its function to set up the simualted mesh, colllider and mesh filter if any
-            HullGenerator hullGenerator = GetComponent<HullGenerator>();
-            if (hullGenerator != null)
+            HullGenerator hullGenerator = runtimeSimulationMesh == null ? GetComponent<HullGenerator>() : null;
+            if (runtimeSimulationMesh != null)
+            {
+                simulatedMesh = runtimeSimulationMesh;
+            }
+            else if (hullGenerator != null)
             {
                 // setting the simulated mesh
                 simulatedMesh = hullGenerator.GenerateHull();
@@ -226,17 +346,25 @@ namespace StormBreakers
             else
             {
                 MeshCollider meshCollider = GetComponent<MeshCollider>();
-                if (meshCollider != null || !meshCollider.enabled)
+                if (meshCollider != null && meshCollider.sharedMesh != null)
                 {
                     // getting the mesh
                     simulatedMesh = meshCollider.sharedMesh;
                 }
                 // if not then there is a big issue.
-                else { Debug.LogError("Please add a hull generator component or mesh collider to this game object."); }
+                else
+                {
+                    Debug.LogError("Please add a hull generator component or mesh collider, or supply a runtime simulation mesh.", this);
+                    return false;
+                }
             }
 
             // last check to be sure
-            if (simulatedMesh == null) { Debug.LogError("No simulated mesh found. Please verify the existence of a hull generator component or mesh collider."); }
+            if (simulatedMesh == null || !simulatedMesh.isReadable || simulatedMesh.vertexCount == 0)
+            {
+                Debug.LogError("No readable simulation mesh found.", this);
+                return false;
+            }
 
             // getting and checking the rigidbody
             rb = GetComponent<Rigidbody>();
@@ -250,31 +378,42 @@ namespace StormBreakers
 
             // ------------ setting the rigid body ----------------------
 
-            // settign the use of the gravity, if no forces generation is requested, the gravity need to be deactivated otherwise the object will make a free fall through the water
-            rb.useGravity = generateWaterForces;
+            // Runtime mesh callers own mass, center of mass, inertia and launch state.
+            if (runtimeSimulationMesh == null)
+            {
+                // settign the use of the gravity, if no forces generation is requested, the gravity need to be deactivated otherwise the object will make a free fall through the water
+                rb.useGravity = generateWaterForces;
 
-            // settign the mass and inertia tensor
-            rb.SetDensity(1000f*relativeDensity);
+                // settign the mass and inertia tensor
+                rb.SetDensity(1000f*relativeDensity);
 
-            // tweaking the intertia tensor
-            rb.inertiaTensor =  Vector3.Scale(inertiaFactors, rb.inertiaTensor);
+                // tweaking the intertia tensor
+                rb.inertiaTensor =  Vector3.Scale(inertiaFactors, rb.inertiaTensor);
 
-            // saving those value because when the center of mass is shifted, it resets the mass and inertia
-            float mass = rb.mass;
-            Vector3 inertiaTensor = rb.inertiaTensor;
+                // saving those value because when the center of mass is shifted, it resets the mass and inertia
+                float mass = rb.mass;
+                Vector3 inertiaTensor = rb.inertiaTensor;
 
-            // set the gravity center position
-            rb.ResetCenterOfMass();
-            rb.centerOfMass +=  gravityCenterShift;
+                // set the gravity center position
+                rb.ResetCenterOfMass();
+                rb.centerOfMass +=  gravityCenterShift;
 
-            // setting back the inertia and mass that have been lost with rb.ResetCenterOfMass()
-            rb.mass = mass;
-            rb.inertiaTensor = inertiaTensor;
+                // setting back the inertia and mass that have been lost with rb.ResetCenterOfMass()
+                rb.mass = mass;
+                rb.inertiaTensor = inertiaTensor;
+            }
 
             // ----------------- setting per triangle data -----------------
 
             // initialize the number of triangle that need to be calculated because mesh.triangles is the list of all vertices, 3 per triangles
-            numberOfTriangles = simulatedMesh.triangles.Length/3;
+            Vector3[] vertices = simulatedMesh.vertices;
+            int[] triangles = simulatedMesh.triangles;
+            numberOfTriangles = triangles.Length / 3;
+            if (numberOfTriangles == 0)
+            {
+                Debug.LogError("The simulation mesh must contain triangles.", this);
+                return false;
+            }
 
             // initialize the size of the per-triangle arrays
             triangleCenter = new Vector3[numberOfTriangles];
@@ -283,15 +422,19 @@ namespace StormBreakers
             triangleArea = new float[numberOfTriangles];
             triangleNormal = new Vector3[numberOfTriangles];
             draggedNormal = new Vector3[numberOfTriangles];
-            undeformedPosition =  new Vector3[numberOfTriangles];
+            undeformedPosition = new Vector3[numberOfTriangles];
+            waterHeight = new float[numberOfTriangles];
+            waterNormal = new Vector3[numberOfTriangles];
+            waterVelocity = new Vector3[numberOfTriangles];
+            waterTorque = new Vector3[numberOfTriangles];
 
             // calculating the per-triangle values
             for (int t = 0; t<numberOfTriangles; t++)
             {
                 // getting each vertex of the triangle
-                Vector3 vertex1 = simulatedMesh.vertices[simulatedMesh.triangles[3*t]];
-                Vector3 vertex2 = simulatedMesh.vertices[simulatedMesh.triangles[3*t + 1]];
-                Vector3 vertex3 = simulatedMesh.vertices[simulatedMesh.triangles[3*t + 2]];
+                Vector3 vertex1 = vertices[triangles[3*t]];
+                Vector3 vertex2 = vertices[triangles[3*t + 1]];
+                Vector3 vertex3 = vertices[triangles[3*t + 2]];
 
                 // scaling the vertex with the transform scale for the computation of the area and size
                 Vector3 scaledVertex1 = Vector3.Scale(transform.localScale, vertex1);
@@ -309,6 +452,13 @@ namespace StormBreakers
 
                 // calculating the cross product that will serve to calculate the scaled area of the traingle and its normal
                 Vector3 crossProduct = Vector3.Cross(scaledVertex2 - scaledVertex1, scaledVertex3 - scaledVertex1);
+                if (runtimeSimulationMesh != null)
+                {
+                    // Account for inherited scale and mirrored runtime parts.
+                    Vector3 worldCross = Vector3.Cross(transform.TransformVector(vertex2 - vertex1), transform.TransformVector(vertex3 - vertex1));
+                    float orientation = Mathf.Sign(transform.localToWorldMatrix.determinant);
+                    crossProduct = transform.InverseTransformDirection(worldCross * orientation);
+                }
 
                 // calulating the area of the triangle being half the magnitude of the cross product
                 float area = 0.5f*crossProduct.magnitude;
@@ -332,6 +482,15 @@ namespace StormBreakers
                 Debug.Log("Cannot use job systems while using shalow water effect (terrain in Ocean Controller). Regular loop will be used instead.");
                 useJobs = false;
             }
+
+            IsInitialized = true;
+            if (Application.isPlaying && CanSampleOcean())
+            {
+                UpdateWaterData();
+                waterDataReady = true;
+            }
+
+            return true;
         }
 
         public void UpdateVFXProperties() // is called by ocean controller when there are modification
@@ -369,6 +528,59 @@ namespace StormBreakers
         }
 
         private void Update()
+        {
+            if (!IsInitialized || !CanSampleOcean())
+            {
+                return;
+            }
+
+            UpdateWaterData();
+            waterDataReady = true;
+
+            // ---------------- computing the audio --------------------------------------
+            if (generateAudio)
+            {
+                // applying the pitch when it get lower to the previous value
+                // non optimized : pitch = Mathf.Min(pitch, pitchFactor/dynamicPressure);
+                float newPitch = pitchFactor/totalDynamicPressure;
+                pitch = pitch>newPitch ? newPitch : pitch;
+
+                // making the pitch fade off
+                pitch += Time.deltaTime*pitchFadeoffRate;
+
+                // ensuring the pitch is correctly clamped
+                if (pitch>1f) { pitch = 1f; }
+                else if (pitch < minPitch) { pitch = minPitch; }
+
+                // applying the volume only when it get louder 
+                // non optimized : volume = Mathf.Max(volume, dynamicPressure*volumeFactor);
+                float newVolume = totalDynamicPressure*volumeFactor;
+                volume = volume<newVolume ? newVolume : volume;
+
+                // volume fade off fucntion of the volume itself
+                // non optimized : volume -= Time.deltaTime*volumeFadeoffRate*Mathf.Max(1f, volume);
+                volume -= Time.deltaTime*volumeFadeoffRate;// * (volume<1f ? 1f : volume);
+
+                // making sure the volume is correclty clamped
+                if (volume<0f) { volume = 0f; }
+                else if (volume > maxVolume) { volume = maxVolume; }
+
+                // clamping volume function of the pitch TEST
+                //float maxVolume = maxVolumeFactor/pitch;
+                //if (volume > maxVolume) { volume = maxVolume; }
+
+                // reinitializing the sum  that will be used for the audio in the next fixed updates
+                totalDynamicPressure = 0f;
+            }
+        }
+
+        internal bool CanSampleOcean()
+        {
+            return flatWater || (Ocean.wavenumber != null && Ocean.wavenumber.Length == 4 && Ocean.wavenumber[0] > 0f
+                && (!Ocean.useTerrain || Ocean.terrain != null));
+        }
+
+        private void UpdateWaterData()
         {
             // ------------- computing the ocean -----------------------
             // computing the ocean in update to avoid computing it several time per frame because of the way FixedUpdate is called.
@@ -475,46 +687,15 @@ namespace StormBreakers
                     }
                 }
             }
-
-            // ---------------- computing the audio --------------------------------------
-            if (generateAudio)
-            {
-                // applying the pitch when it get lower to the previous value
-                // non optimized : pitch = Mathf.Min(pitch, pitchFactor/dynamicPressure);
-                float newPitch = pitchFactor/totalDynamicPressure;
-                pitch = pitch>newPitch ? newPitch : pitch;
-
-                // making the pitch fade off
-                pitch += Time.deltaTime*pitchFadeoffRate;
-
-                // ensuring the pitch is correctly clamped
-                if (pitch>1f) { pitch = 1f; }
-                else if (pitch < minPitch) { pitch = minPitch; }
-
-                // applying the volume only when it get louder 
-                // non optimized : volume = Mathf.Max(volume, dynamicPressure*volumeFactor);
-                float newVolume = totalDynamicPressure*volumeFactor;
-                volume = volume<newVolume ? newVolume : volume;
-
-                // volume fade off fucntion of the volume itself
-                // non optimized : volume -= Time.deltaTime*volumeFadeoffRate*Mathf.Max(1f, volume);
-                volume -= Time.deltaTime*volumeFadeoffRate;// * (volume<1f ? 1f : volume);
-
-                // making sure the volume is correclty clamped
-                if (volume<0f) { volume = 0f; }
-                else if (volume > maxVolume) { volume = maxVolume; }
-
-                // clamping volume function of the pitch TEST
-                //float maxVolume = maxVolumeFactor/pitch;
-                //if (volume > maxVolume) { volume = maxVolume; }
-
-                // reinitializing the sum  that will be used for the audio in the next fixed updates
-                totalDynamicPressure = 0f;
-            }
         }
 
         private void FixedUpdate()
         {
+            if (!IsInitialized || !waterDataReady || !CanSampleOcean() || (runtimeSimulationMesh != null && rb.isKinematic))
+            {
+                return;
+            }
+
             // ------------- computing the forces, particles and audio ----------------------       
 
             // initializing the current total dynamic pressure, this will overwrite the value used for the audio only when bigger to keep quick burst audio that happens within the fixed frames serie
@@ -582,7 +763,8 @@ namespace StormBreakers
                     if (depth > 0f)
                     {
                         // static pressure is rho.g.h
-                        float staticPressure = depth*10000f;
+                        float buoyancyMultiplier = runtimeBuoyancyMultipliers == null ? 1f : runtimeBuoyancyMultipliers[t];
+                        float staticPressure = depth*10000f*buoyancyMultiplier;
 
                         // the buoyancy resultant is then the presssure multiplied by the area dn oriented in triangle normal
                         Vector3 buoyancyForce = staticPressure*triangleArea[t]*worldTriangleNormal;
@@ -593,7 +775,7 @@ namespace StormBreakers
                             buoyancyForce = Vector3.Dot(buoyancyForce, Vector3.up)*Vector3.up;
                         }
 
-                        // dynamic pressure is 1/2*rho*V², currentlty oriented in the normal velocity direction
+                        // dynamic pressure is 1/2*rho*Vï¿½, currentlty oriented in the normal velocity direction
                         float dynamicPressure;
                         if (normalVelocity > 0f) { dynamicPressure =  500f*normalVelocity*normalVelocity; }
                         else { dynamicPressure = -500f*normalVelocity*normalVelocity; }
@@ -796,6 +978,17 @@ namespace StormBreakers
             // drawing
             Gizmos.color = Color.yellow;
             Gizmos.DrawWireSphere(transform.TransformPoint(rb.centerOfMass), Mathf.Pow(rb.mass, 1f/3f)*0.005f);
+
+            if (drawSimulationMesh && runtimeSimulationMesh != null)
+            {
+                Matrix4x4 previousMatrix = Gizmos.matrix;
+                Color previousColor = Gizmos.color;
+                Gizmos.matrix = transform.localToWorldMatrix;
+                Gizmos.color = Color.cyan;
+                Gizmos.DrawWireMesh(runtimeSimulationMesh);
+                Gizmos.matrix = previousMatrix;
+                Gizmos.color = previousColor;
+            }
         }
 
         // On Validate is bugged and need this fix 
@@ -804,6 +997,11 @@ namespace StormBreakers
         {
             UnityEditor.EditorApplication.delayCall -= OnValidateDebuged;
             if (this == null) return;
+            if (runtimeSimulationMesh == null && GetComponent<HullGenerator>() == null)
+            {
+                MeshCollider meshCollider = GetComponent<MeshCollider>();
+                if (meshCollider == null || meshCollider.sharedMesh == null) return;
+            }
 
             // updata data (mostly the position of gravity center) only when touching the inspector
             InitializePhysic();

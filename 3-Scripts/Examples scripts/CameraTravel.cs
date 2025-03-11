@@ -34,12 +34,12 @@ namespace StormBreakers
             if (boatControllerToAutomate.automaticPilot)
             {
                 // transforming the camera vector in local space
-                Vector3 forward = new Vector3(
+                var forward = new Vector3(
                     Vector3.Dot(cameraAnchor.objectFollowed.transform.right, Camera.main.transform.forward),
                     Vector3.Dot(cameraAnchor.objectFollowed.transform.up, Camera.main.transform.forward),
                     Vector3.Dot(cameraAnchor.objectFollowed.transform.forward, Camera.main.transform.forward));
 
-                Vector3 right = new Vector3(
+                var right = new Vector3(
                     Vector3.Dot(cameraAnchor.objectFollowed.transform.right, Camera.main.transform.right),
                     Vector3.Dot(cameraAnchor.objectFollowed.transform.up, Camera.main.transform.right),
                     Vector3.Dot(cameraAnchor.objectFollowed.transform.forward, Camera.main.transform.right));

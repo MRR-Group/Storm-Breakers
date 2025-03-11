@@ -109,15 +109,15 @@ namespace StormBreakers
             // -------- audio filtering --------
 
             // looping through each sample group
-            for (int s = 0; s < data.Length; s += channels)
+            for (var s = 0; s < data.Length; s += channels)
             {
                 // looping through sample of each channel in sample group
-                for (int c = 0; c < channels; c++)
+                for (var c = 0; c < channels; c++)
                 {
                     if (c == 0) // chanel 0
                     {
                         // low pass filter
-                        float filteredData = alpha*data[s+c] + (1f-alpha)*lastFilteredData0;
+                        var filteredData = alpha*data[s+c] + (1f-alpha)*lastFilteredData0;
 
                         // saving the data for the next loop
                         lastFilteredData0 = filteredData;
@@ -128,7 +128,7 @@ namespace StormBreakers
                     else // chanel 1
                     {
                         // low pass filter
-                        float filteredData = alpha*data[s+c] + (1f-alpha)*lastFilteredData1;
+                        var filteredData = alpha*data[s+c] + (1f-alpha)*lastFilteredData1;
 
                         // saving the data for the next loop
                         lastFilteredData1 = filteredData;

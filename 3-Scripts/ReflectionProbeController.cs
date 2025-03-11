@@ -14,7 +14,7 @@ namespace StormBreakers
         void Update()
         {
             // folowing the main camera in game mode
-            Camera camera = Camera.main;
+            var camera = Camera.main;
 
 #if UNITY_EDITOR
             // folowing the editor camera in edit mode if it exist, using game camera otherwise
@@ -31,7 +31,7 @@ namespace StormBreakers
             }
 #endif
             // getting the camera position
-            Vector3 camPosition = camera.transform.position;
+            var camPosition = camera.transform.position;
 
             // setting the reflection probe at the mirror position of the camera relative to the medium plane of the water with some tweaks
             transform.position = new Vector3(camPosition.x, -(1f + mirroringTweak*Ocean.surfaceIntensity)*camPosition.y, camPosition.z);

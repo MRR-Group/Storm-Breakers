@@ -30,7 +30,7 @@ namespace StormBreakers
         void Update()
         {
 
-            float t = Time.timeSinceLevelLoad;
+            var t = Time.timeSinceLevelLoad;
             rb.mass = Mathf.Min(maxMass, targetMass*t*t/(targetTime*targetTime));
 
             // disabling the controler when the time is out

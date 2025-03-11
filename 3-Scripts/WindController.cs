@@ -107,7 +107,7 @@ namespace StormBreakers
             if (generateAudio)
             {
                 // defining the wind velocity that depends if the camera is underwater or not
-                Vector3 windVelocity = Vector3.zero;
+                var windVelocity = Vector3.zero;
 
                 // when the camera is underwater there is no wind in the ears, else the wind is computed
                 if (!detectWater.IsUnderwater)
@@ -123,15 +123,15 @@ namespace StormBreakers
                 }
 
                 // getting the magnitude and normailzed wind vector to ease computation (with a safe division)
-                float windStrength = windVelocity.magnitude;
-                Vector3 windVector = windStrength>0.01f ? windVelocity/windStrength : Vector3.zero;
+                var windStrength = windVelocity.magnitude;
+                var windVector = windStrength>0.01f ? windVelocity/windStrength : Vector3.zero;
 
 
                 // calculating the projection of the wind onto the camera foward vector
-                float forwardIntensity = Vector3.Dot(-Camera.main.transform.forward, windVector);
+                var forwardIntensity = Vector3.Dot(-Camera.main.transform.forward, windVector);
 
                 // calculating the projection of the wind onto the camera right vector
-                float rightIntensity = Vector3.Dot(-Camera.main.transform.right, windVector);
+                var rightIntensity = Vector3.Dot(-Camera.main.transform.right, windVector);
 
                 // setting the volume and pitch of the audio source according to the wind strength
                 audioSource.volume = Mathf.Min(1f, windStrength*volumeFactor)*(0.7f + 0.2f*forwardIntensity +0.3f*(rightIntensity>0f ? rightIntensity : -rightIntensity)); // Mathf.Min(1f, windStrength*volumeFactor)*(0.7f+0.3f*forwardIntensity);
@@ -163,17 +163,17 @@ namespace StormBreakers
             Gizmos.color = Color.blue;
 
             // getting the position of the object and removing y coordinate to make sure the wind is drawn from the sea level
-            Vector3 position = new Vector3(transform.position.x, 0f, transform.position.z);
+            var position = new Vector3(transform.position.x, 0f, transform.position.z);
 
             // draw several lines every 3m heigth untul 50m
-            for (float y = 0f; y <= 50f; y+= 3f)
+            for (var y = 0f; y <= 50f; y+= 3f)
             {
                 // getting the wind at this height
-                Vector3 wind = Ocean.GetWindVelocity(new Vector3(0f, y, 0f));
+                var wind = Ocean.GetWindVelocity(new Vector3(0f, y, 0f));
 
                 // simplifying the code
-                Vector3 from = position + Vector3.up*y;
-                Vector3 to = from + wind;
+                var from = position + Vector3.up*y;
+                var to = from + wind;
 
                 // drawing the wind vector at this position
                 Gizmos.DrawLine(from, to);

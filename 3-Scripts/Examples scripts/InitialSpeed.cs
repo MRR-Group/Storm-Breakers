@@ -10,7 +10,7 @@ namespace StormBreakers
 
         void Start()
         {
-            GetComponent<Rigidbody>().velocity = transform.right*initialSpeed;
+            GetComponent<Rigidbody>().linearVelocity = transform.right*initialSpeed;
         }
     }
 }

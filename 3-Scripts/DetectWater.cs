@@ -24,7 +24,7 @@ namespace StormBreakers
         void Update()
         {
             // getting the ground depth
-            float groundDepth = 200f;
+            var groundDepth = 200f;
             if (Ocean.useTerrain)
             {
                 groundDepth = -Ocean.terrain.SampleHeight(undeformedPosition) - Ocean.terrain.transform.position.y;
